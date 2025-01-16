@@ -29,21 +29,16 @@ typedef enum {
 
 /// The location of a token in the source code.
 typedef struct {
-    /// The line number where the token begins and starting column of the token (both starting from 1).
-    int line, column;
+    int line, column;   // The line and the column where the token begins (both starting from 1).
 } Location;
 
 /// Token structure to store token information in the lexical analysis process.
 /// It tracks the line number and the start column of the token.
 typedef struct {
-    /// The type of the token (e.g. TOKEN_NUMBER, TOKEN_EOF).
-    TokenType tokenType;
-    /// Any error associated with the token (e.g., ERROR_INVALID_CHAR).
-    TokenError tokenError;
-    /// The location of the token in the source code (line and column).
-    Location location;
-    /// The actual content (lexeme) of the token
-    char lexeme[128];
+    TokenType tokenType;     // The type of the token (e.g. TOKEN_NUMBER, TOKEN_EOF).
+    TokenError tokenError;   // Any error associated with the token (e.g., ERROR_INVALID_CHAR).
+    Location location;       // The location of the token in the source code (line and column).
+    char lexeme[128];        // The actual content (lexeme) of the token.
 } Token;
 
 #endif /* TOKEN_H */
