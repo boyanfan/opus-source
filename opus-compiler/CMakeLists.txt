@@ -14,4 +14,5 @@ set(CMAKE_C_STANDARD 17)
 # Add include directory for the header files (.h)
 include_directories(opus-lexer/includes)
 
+# Phase 1 Lexer (lexer.c) has been added to the executable list for debugging purpose
 add_executable(Opus opus-lexer/src/lexer.c)
