@@ -24,6 +24,30 @@ typedef struct {
     FILE* sourceCode;        // Source code file being processed by the lexer
 } Lexer;
 
+/// Reads the next token from the source code.
+///
+/// \param lexer A pointer to the Lexer instance to update.
+/// \param sourceCode A pointer to the FILE object containing the source code.
+/// @return A pointer to a Token representing the next token in the source code.
+///
+Token *getNextToken(Lexer *lexer, FILE* sourceCode);
+
+/// Updates the location of the lexer to the start of the next token.
+///
+/// \param lexer A pointer to the Lexer instance to update.
+/// \param sourceCode A pointer to the FILE object containing the source code.
+/// \return The next character in the input stream without consuming it (may return 'EOF').
+///
+int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode);
+
+/// Updates the location of the lexer to the start of the next line.
+///
+/// \param lexer A pointer to the Lexer instance to update.
+/// \param sourceCode A pointer to the FILE object containing the source code.
+/// \return The next character in the input stream without consuming it (may return 'EOF').
+///
+int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode);
+
 /// Peeks at the next character in the input stream without advancing the file pointer.
 ///
 /// \param sourceCode A pointer to the FILE object representing the input stream.

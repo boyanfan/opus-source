@@ -11,7 +11,8 @@ int main() {
     if (sourceCode) printf("Hello Opus!\n");
 
     Lexer *lexer = initLexer(sourceCode);
-    printf("%d, %d:%d", lexer->lexerError, lexer->location.line, lexer->location.column);
+    getNextToken(lexer, sourceCode);
 
+    printf("%d, %d:%d", lexer->lexerError, lexer->location.line, lexer->location.column);
     return 0;
 }

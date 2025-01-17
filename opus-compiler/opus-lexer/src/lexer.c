@@ -7,6 +7,57 @@
 #include <stdlib.h>
 #include "lexer.h"
 
+Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
+    // Skip whitespaces to reach the position of the first character of the next token
+    int character = locateStartOfNextToken(lexer, sourceCode);
+    Token *token = (Token*) malloc(sizeof(Token));
+
+    // If the lexer has reached the end of the source code
+    if (character == EOF) {
+        token->tokenType = TOKEN_EOF;
+        token->tokenError = ERROR_TOKEN_NONE;
+        token->location = lexer->location;
+        return token;
+    }
+    printf("%c\n", (char) character);
+
+    return token;
+}
+
+int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
+    int character = peekNextCharacter(sourceCode);
+
+    // Consume (skip) the character only if the character is a whitespace
+    while (isWhitespace((char) character) && character != EOF) {
+        character = fgetc(sourceCode);
+        lexer->location.column += 1;
+    }
+
+    // If the character has reached a comment line (starts with `//`), consume the entire line
+    if (character == '/' && peekNextCharacter(sourceCode) == '/') {
+        locateStartOfNextLine(lexer, sourceCode);
+        return locateStartOfNextToken(lexer, sourceCode);
+    }
+
+    return character;
+}
+
+int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode) {
+    int character;
+
+    // Consume (skip) the entire current line and locate the lexer to the start of the next line
+    while ((character = fgetc(sourceCode)) != EOF) {
+        lexer->location.column++;
+        if (character == '\n') {
+            lexer->location.line++;
+            lexer->location.column = 1;
+            break;
+        }
+    }
+
+    return character;
+}
+
 int peekNextCharacter(FILE *sourceCode) {
     // Read the current character and push it back into the stream
     int character = fgetc(sourceCode);
