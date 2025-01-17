@@ -18,12 +18,13 @@ typedef enum {
     TOKEN_EOF,                   // The end of the input file or stream
     TOKEN_NUMBER,                // Numeric values like "42", ...
     TOKEN_ARITHMETIC_OPERATOR,   // Arithmetic operators like "+", "-", "*" and "/", ...
-    TOKEN_ERROR                  // Invalid or unrecognized token
+    TOKEN_ERROR,                 // Invalid or unrecognized token
+    TOKEN_DELIMITER,             // Delimiters like a newline character
 } TokenType;
 
 /// Error types for lexical analysis
 typedef enum {
-    ERROR_NONE,                 // No error occurred
+    ERROR_TOKEN_NONE,           // No error occurred
     ERROR_INVALID_CHARACTER,    // An invalid or unrecognized character was encountered
     ERROR_INVALID_NUMBER,       // A number was malformed or invalid
     ERROR_UNDEFINED_OPERATOR,   // An invalid or unrecognized operator

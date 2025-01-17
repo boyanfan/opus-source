@@ -8,6 +8,10 @@
 
 int main() {
     FILE *sourceCode = openOpusSourceCode("../tests/arithmetic.opus");
-    if (sourceCode) printf("Hello Opus!");
+    if (sourceCode) printf("Hello Opus!\n");
+
+    Lexer *lexer = initLexer(sourceCode);
+    printf("%d, %d:%d", lexer->lexerError, lexer->location.line, lexer->location.column);
+
     return 0;
 }

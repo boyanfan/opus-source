@@ -1,1 +1,2 @@
-42 + 3 * 80
+    // This is a comment in Opus and should be ignored by the compiler
+    42 + 3 * 80
