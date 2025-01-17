@@ -4,8 +4,10 @@
 //
 
 #include <stdio.h>
+#include "lexer.h"
 
 int main() {
-    printf("Hello Opus!");
+    FILE *sourceCode = openOpusSourceCode("../tests/arithmetic.opus");
+    if (sourceCode) printf("Hello Opus!");
     return 0;
 }

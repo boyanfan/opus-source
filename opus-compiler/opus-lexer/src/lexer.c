@@ -7,7 +7,7 @@
 #include "lexer.h"
 
 int isOpusSourceCode(const char *filename) {
-    const char *extension = ".opus";
+    const char *extension = OPUS_FILE_EXTENSION;
     size_t filenameLength = strlen(filename);
     size_t extensionLength = strlen(extension);
 
@@ -18,18 +18,18 @@ int isOpusSourceCode(const char *filename) {
     return strcmp(filename + filenameLength - extensionLength, extension) == 0;
 }
 
-FILE* openOpusFile(const char *filename) {
+FILE* openOpusSourceCode(const char *filename) {
     // Check if the file is Opus source code (with .opus extension)
     if (!isOpusSourceCode(filename)) {
-        fprintf(stderr, "Error: File '%s' is not the Opus source code. (Must be .opus files)\n", filename);
+        fprintf(stderr, NOT_OPUS_SOURCE_CODE_ERROR, filename);
         return NULL;
     }
 
-    FILE *file = fopen(filename, "r");
+    FILE *file = fopen(filename, READONLY_ACCESS);
 
     // If unable to read from the given Opus source code
     if (!file) {
-        fprintf(stderr, "Error: Could not open the provided Opus source code '%s'.\n", filename);
+        fprintf(stderr, ACCESS_OPUS_SOURCE_CODE_ERROR, filename);
         return NULL;
     }
 
