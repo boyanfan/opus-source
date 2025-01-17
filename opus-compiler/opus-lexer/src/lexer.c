@@ -8,30 +8,30 @@
 #include "lexer.h"
 
 Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
-    // Skip whitespaces to reach the position of the first character of the next token
+    // Skip whitespaces and comments to reach the first character of the next token
     int character = locateStartOfNextToken(lexer, sourceCode);
-    Token *token = (Token*) malloc(sizeof(Token));
+
+    // Then consume the current lexing character and update the lexer location
+    consumeNextCharacter(lexer, sourceCode);
+
+    // Handle the single character conversion from ASCII code (int) to lexeme (char*)
+    char lexeme[LEXEME_LENGTH] = {(char) character, '\0'};
 
     // If the lexer has reached the end of the source code
-    if (character == EOF) {
-        token->tokenType = TOKEN_EOF;
-        token->tokenError = ERROR_TOKEN_NONE;
-        token->location = lexer->location;
-        return token;
-    }
-    printf("%c\n", (char) character);
+    if (character == EOF) return initSafeToken(TOKEN_EOF, lexer->location, lexeme);
 
-    return token;
+    // A newline character is a delimiter if it is outside a closure (that is [...], (...) and <...>)
+    if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
+
+    // If unable to recognize the token
+    return initUnsafeToken(ERROR_INVALID_CHARACTER, lexer->location, lexeme);
 }
 
 int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
     int character = peekNextCharacter(sourceCode);
 
     // Consume (skip) the character only if the character is a whitespace
-    while (isWhitespace((char) character) && character != EOF) {
-        character = fgetc(sourceCode);
-        lexer->location.column += 1;
-    }
+    while (isWhitespace((char) character) && character != EOF) character = consumeNextCharacter(lexer, sourceCode);
 
     // If the character has reached a comment line (starts with `//`), consume the entire line
     if (character == '/' && peekNextCharacter(sourceCode) == '/') {
@@ -43,17 +43,17 @@ int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
 }
 
 int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode) {
-    int character;
+    int character = peekNextCharacter(sourceCode);
 
-    // Consume (skip) the entire current line and locate the lexer to the start of the next line
-    while ((character = fgetc(sourceCode)) != EOF) {
-        lexer->location.column++;
-        if (character == '\n') {
-            lexer->location.line++;
-            lexer->location.column = 1;
-            break;
-        }
-    }
+    while (character != '\n') character = consumeNextCharacter(lexer, sourceCode);
+    return consumeNextCharacter(lexer, sourceCode);
+}
+
+int consumeNextCharacter(Lexer *lexer, FILE *sourceCode) {
+    int character = fgetc(sourceCode);
+
+    if (character != '\n') lexer->location.column++;
+    else { lexer->location.line++; lexer->location.column = 1; }
 
     return character;
 }
@@ -69,7 +69,7 @@ int isWhitespace(char character) {
     return (character == ' ' || character == '\t' || character == '\v' || character == '\r' || character == '\f');
 }
 
-Lexer *initLexer(FILE* sourceCode) {
+Lexer *initLexer() {
     // Allocate memory for the Lexer instance and return NULL if memory allocation failed
     Lexer *lexer = (Lexer*) malloc(sizeof(Lexer));
     if (!lexer) return NULL;
@@ -80,8 +80,36 @@ Lexer *initLexer(FILE* sourceCode) {
     // Initialize the lexer with no error at the beginning of the referenced source code
     lexer->lexerError = ERROR_LEXER_NONE;
     lexer->location = location;
-    lexer->sourceCode = sourceCode;
+    lexer->isInClosure = 0;
     return lexer;
+}
+
+Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme) {
+    Token *token = (Token*) malloc(sizeof(Token));
+
+    token->tokenError = ERROR_TOKEN_NONE;
+    token->tokenType = tokenType;
+    token->location = location;
+
+    size_t lexemeLength = strlen(lexeme);
+    strncpy(token->lexeme, lexeme, lexemeLength);
+    token->lexeme[lexemeLength] = '\0';
+
+    return token;
+}
+
+Token *initUnsafeToken(TokenError tokenError, Location location, const char *lexeme) {
+    Token *token = (Token*) malloc(sizeof(Token));
+
+    token->tokenType = TOKEN_ERROR;
+    token->tokenError = tokenError;
+    token->location = location;
+
+    size_t lexemeLength = strlen(lexeme);
+    strncpy(token->lexeme, lexeme, lexemeLength);
+    token->lexeme[lexemeLength] = '\0';
+
+    return token;
 }
 
 FILE* openOpusSourceCode(const char *filename) {
@@ -113,4 +141,23 @@ int isOpusSourceCode(const char *filename) {
 
     // Compare the end of the filename with the ".opus" extension
     return strcmp(filename + filenameLength - extensionLength, extension) == 0;
+}
+
+void displayToken(Token token) {
+    printf("<Token:");
+    switch (token.tokenType) {
+        case TOKEN_NUMERIC: printf("Numeric"); break;
+        case TOKEN_ARITHMETIC_OPERATOR: printf("ArithmeticOperator"); break;
+        case TOKEN_EOF: printf("EOF"); break;
+        case TOKEN_DELIMITER: printf("Delimiter"); break;
+        default: printf("Unrecognizable");
+    }
+
+    printf(", Lexeme:\"");
+    switch (*token.lexeme) {
+        case '\n': printf("\\n"); break;
+        default: printf("%s", token.lexeme);
+    }
+
+    printf("\"> at location %d:%d\n", token.location.line, token.location.column);
 }

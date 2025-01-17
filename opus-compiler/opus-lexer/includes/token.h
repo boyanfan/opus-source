@@ -16,7 +16,7 @@
 /// Token types that need to be recognized by the lexer.
 typedef enum {
     TOKEN_EOF,                   // The end of the input file or stream
-    TOKEN_NUMBER,                // Numeric values like "42", ...
+    TOKEN_NUMERIC,                // Numeric values like "42", ...
     TOKEN_ARITHMETIC_OPERATOR,   // Arithmetic operators like "+", "-", "*" and "/", ...
     TOKEN_ERROR,                 // Invalid or unrecognized token
     TOKEN_DELIMITER,             // Delimiters like a newline character
@@ -38,7 +38,7 @@ typedef struct {
 /// Token structure to store token information in the lexical analysis process.
 /// It tracks the line number and the start column of the token.
 typedef struct {
-    TokenType tokenType;          // The type of the token (e.g. TOKEN_NUMBER, TOKEN_EOF).
+    TokenType tokenType;          // The type of the token (e.g. TOKEN_NUMERIC, TOKEN_EOF).
     TokenError tokenError;        // Any error associated with the token (e.g., ERROR_INVALID_CHAR).
     Location location;            // The location of the token in the source code (line and column).
     char lexeme[LEXEME_LENGTH];   // The actual content (lexeme) of the token.
