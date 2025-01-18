@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "lexer.h"
 
 Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
@@ -19,6 +20,22 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
 
     // A newline character is a delimiter if it is outside a closure (that is [...], (...) and <...>)
     if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
+
+    // If the lexer has reached a numeric literal
+    if (isdigit(character)) {
+        int decimal = 0;
+
+        do lexeme[decimal++] = (char) character;
+        while (isdigit(character = consumeNextCharacter(lexer, sourceCode)) && decimal < LEXEME_LENGTH);
+
+        lexeme[decimal] = '\0';
+        return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+    }
+
+    // If the lexer has reached an arithmetic operator (i.e. '+', '-', '*', '/' and '%')
+    if (strchr(ARITHMETIC_OPERATORS, character) && !strchr(ARITHMETIC_OPERATORS, peekNextCharacter(sourceCode))) {
+        return initSafeToken(TOKEN_ARITHMETIC_OPERATOR, lexer->location, lexeme);
+    }
 
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
