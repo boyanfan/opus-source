@@ -56,7 +56,7 @@ int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode);
 ///
 int consumeNextCharacter(Lexer *lexer, FILE *sourceCode);
 
-/// Peeks at the next character in the input stream without advancing the file pointer.
+/// Peeks at the next character in the input stream without consuming it (by advancing the file pointer).
 ///
 /// \param sourceCode A pointer to the FILE object representing the input stream.
 /// \return The next character in the input stream without consuming it (may return 'EOF').

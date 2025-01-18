@@ -11,9 +11,6 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // Skip whitespaces and comments to reach the first character of the next token
     int character = locateStartOfNextToken(lexer, sourceCode);
 
-    // Then consume the current lexing character and update the lexer location
-    consumeNextCharacter(lexer, sourceCode);
-
     // Handle the single character conversion from ASCII code (int) to lexeme (char*)
     char lexeme[LEXEME_LENGTH] = {(char) character, '\0'};
 
@@ -24,13 +21,13 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
 
     // If unable to recognize the token
-    return initUnsafeToken(ERROR_INVALID_CHARACTER, lexer->location, lexeme);
+    return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
 }
 
 int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
-    int character = peekNextCharacter(sourceCode);
+    int character = consumeNextCharacter(lexer, sourceCode);
 
-    // Consume (skip) the character only if the character is a whitespace
+    // Consume the character only if the character is a whitespace
     while (isWhitespace((char) character) && character != EOF) character = consumeNextCharacter(lexer, sourceCode);
 
     // If the character has reached a comment line (starts with `//`), consume the entire line
@@ -46,7 +43,7 @@ int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode) {
     int character = peekNextCharacter(sourceCode);
 
     while (character != '\n') character = consumeNextCharacter(lexer, sourceCode);
-    return consumeNextCharacter(lexer, sourceCode);
+    return peekNextCharacter(sourceCode);
 }
 
 int consumeNextCharacter(Lexer *lexer, FILE *sourceCode) {

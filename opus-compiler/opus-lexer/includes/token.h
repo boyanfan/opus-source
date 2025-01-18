@@ -25,7 +25,7 @@ typedef enum {
 /// Error types for lexical analysis
 typedef enum {
     ERROR_TOKEN_NONE,           // No error occurred
-    ERROR_INVALID_CHARACTER,    // An invalid or unrecognized character was encountered
+    ERROR_UNRECOGNIZABLE,       // An invalid or unrecognized character was encountered
     ERROR_INVALID_NUMBER,       // A number was malformed or invalid
     ERROR_UNDEFINED_OPERATOR,   // An invalid or unrecognized operator
 } TokenError;

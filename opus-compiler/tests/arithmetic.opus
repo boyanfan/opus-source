@@ -1,6 +1,7 @@
 // Test Case, where
-// This (starts with '//') is a comment in Opus and should be ignored by the compiler
-// Whitespaces (like the spaces before this line) should also be ignored
-// Empty newline (like displayed below) should also be ignored
+    // This (starts with '//') is a comment in Opus and should be ignored by the compiler
+    // Whitespaces (like the spaces before this line) should also be ignored
 
- 12 + 34 *56
+    12 + 34 * 56
+
+78 * 90

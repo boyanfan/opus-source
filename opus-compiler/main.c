@@ -10,7 +10,7 @@ int main() {
     FILE *sourceCode = openOpusSourceCode("../tests/arithmetic.opus");
     if (sourceCode) printf("Hello Opus!\n");
 
-    Lexer *lexer = initLexer(sourceCode);
+    Lexer *lexer = initLexer();
     Token *token = getNextToken(lexer, sourceCode);
 
     while (token->tokenType != TOKEN_EOF) {
