@@ -26,8 +26,9 @@ typedef enum {
 typedef enum {
     ERROR_TOKEN_NONE,           // No error occurred
     ERROR_UNRECOGNIZABLE,       // An invalid or unrecognized character was encountered
-    ERROR_INVALID_NUMBER,       // A number was malformed or invalid
+    ERROR_MALFORMED_NUMERIC,    // A number was malformed or invalid
     ERROR_UNDEFINED_OPERATOR,   // An invalid or unrecognized operator
+    ERROR_OVERFLOW,             // Too long lexeme causes a buffer overflow
 } TokenError;
 
 /// The location of a token in the source code.

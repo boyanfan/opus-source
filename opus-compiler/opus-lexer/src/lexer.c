@@ -21,19 +21,27 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // A newline character is a delimiter if it is outside a closure (that is [...], (...) and <...>)
     if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
 
-    // If the lexer has reached a numeric literal
+    // If the lexer has reached a numeric literal, lex it and handle any malformed numerics
     if (isdigit(character)) {
+        // Put the first character of the numeric value to the lexeme
         int decimal = 0;
+        lexeme[decimal++] = (char) character;
 
-        do lexeme[decimal++] = (char) character;
-        while (isdigit(character = consumeNextCharacter(lexer, sourceCode)) && decimal < LEXEME_LENGTH);
+        // Since newline character could be a delimiter, we must handle it before actually consuming it
+        while (isdigit(peekNextCharacter(sourceCode)) && decimal < LEXEME_LENGTH) {
+            character = consumeNextCharacter(lexer, sourceCode);
+            lexeme[decimal++] = (char) character;
+        }
+
+        // Check if the length of the numeric value could cause a buffer overflow
+        if (decimal == LEXEME_LENGTH) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
 
         lexeme[decimal] = '\0';
         return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
     }
 
     // If the lexer has reached an arithmetic operator (i.e. '+', '-', '*', '/' and '%')
-    if (strchr(ARITHMETIC_OPERATORS, character) && !strchr(ARITHMETIC_OPERATORS, peekNextCharacter(sourceCode))) {
+    if (strchr("+-*/%", character) && !strchr("+-*/%", peekNextCharacter(sourceCode))) {
         return initSafeToken(TOKEN_ARITHMETIC_OPERATOR, lexer->location, lexeme);
     }
 
@@ -104,7 +112,7 @@ Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme)
     token->tokenError = ERROR_TOKEN_NONE;
     token->tokenType = tokenType;
 
-    size_t lexemeLength = strlen(lexeme);
+    int lexemeLength = (int) strlen(lexeme);
     strncpy(token->lexeme, lexeme, lexemeLength);
     token->lexeme[lexemeLength] = '\0';
 
@@ -121,7 +129,7 @@ Token *initUnsafeToken(TokenError tokenError, Location location, const char *lex
     token->tokenType = TOKEN_ERROR;
     token->tokenError = tokenError;
 
-    size_t lexemeLength = strlen(lexeme);
+    int lexemeLength = (int) strlen(lexeme);
     strncpy(token->lexeme, lexeme, lexemeLength);
     token->lexeme[lexemeLength] = '\0';
 
@@ -170,7 +178,13 @@ void displayToken(Token token) {
         case TOKEN_ARITHMETIC_OPERATOR: printf("ArithmeticOperator"); break;
         case TOKEN_EOF: printf("EOF"); break;
         case TOKEN_DELIMITER: printf("Delimiter"); break;
+        case TOKEN_ERROR: printf(" [ERROR] "); break;
         default: printf("Unrecognizable");
+    }
+
+    switch (token.tokenError) {
+        case ERROR_MALFORMED_NUMERIC: printf("MalformedNumeric"); break;
+        default:;
     }
 
     printf(", Lexeme:\"");

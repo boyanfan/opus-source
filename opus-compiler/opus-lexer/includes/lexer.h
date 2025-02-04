@@ -12,7 +12,6 @@
 
 #define OPUS_FILE_EXTENSION  ".opus"
 #define READONLY_ACCESS      "r"
-#define ARITHMETIC_OPERATORS "+-*/%"
 
 #include <stdio.h>
 #include "token.h"
