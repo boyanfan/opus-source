@@ -15,5 +15,4 @@ set(CMAKE_C_STANDARD 17)
 include_directories(opus-lexer/includes)
 
 # Phase 1 Lexer (lexer.c) has been added to the executable list for debugging purpose
-add_executable(Opus main.c
-                    opus-lexer/src/lexer.c)
+add_executable(Opus main.c opus-lexer/src/lexer.c)

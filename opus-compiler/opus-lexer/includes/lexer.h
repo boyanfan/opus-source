@@ -1,5 +1,9 @@
 // lexer.h
 //
+// This header file defines the structures and functions used for lexical analysis. It provides functionality to
+// tokenize the input source code, identify keywords, operators, integers, and other tokens, while keeping track of
+// their locations in the source code for debugging or error reporting purposes.
+//
 // Created by Boyan Fan, 2025/01/16
 //
 
@@ -79,28 +83,6 @@ int isWhitespace(char character);
 /// use function 'FILE *openOpusSourceCode(const char*)' to safely open an Opus source code.
 ///
 Lexer *initLexer();
-
-/// Initializes a new Token instance safely with the given type and location.
-///
-/// This function creates a new Token and initializes its fields with the specified type and location.
-/// The term "safe" indicates that this function does not handle or propagate errors, meaning it does not require
-/// passing a `TokenError`. It assumes the inputs are valid and allocates memory for the token.
-///
-/// @param tokenType The type of the token (e.g., identifier, keyword, symbol).
-/// @param location The location information of the token, typically used for debugging or error reporting.
-/// @param lexeme The content (lexeme) of the token to be stored.
-/// @return A pointer to the newly created Token, or NULL if memory allocation fails.
-///
-Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme);
-
-/// Initializes a new Token instance with the given error and location.
-///
-/// @param tokenError The error associated with the token, describing why it could not be initialized normally.
-/// @param location The location information of the token, typically used for debugging or error reporting.
-/// @param lexeme The content (lexeme) of the token to be stored.
-/// @return A pointer to the newly created Token, or NULL if memory allocation fails.
-///
-Token *initUnsafeToken(TokenError tokenError, Location location, const char *lexeme);
 
 /// Using this function to access an Opus source file is recommended.
 ///

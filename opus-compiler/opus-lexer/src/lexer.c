@@ -103,11 +103,14 @@ Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme)
 
     token->tokenError = ERROR_TOKEN_NONE;
     token->tokenType = tokenType;
-    token->location = location;
 
     size_t lexemeLength = strlen(lexeme);
     strncpy(token->lexeme, lexeme, lexemeLength);
     token->lexeme[lexemeLength] = '\0';
+
+    // Get the beginning location of the current token
+    token->location.line = location.line;
+    token->location.column = location.column - (int) lexemeLength;
 
     return token;
 }
@@ -117,11 +120,14 @@ Token *initUnsafeToken(TokenError tokenError, Location location, const char *lex
 
     token->tokenType = TOKEN_ERROR;
     token->tokenError = tokenError;
-    token->location = location;
 
     size_t lexemeLength = strlen(lexeme);
     strncpy(token->lexeme, lexeme, lexemeLength);
     token->lexeme[lexemeLength] = '\0';
+
+    // Get the beginning location of the current token
+    token->location.line = location.line;
+    token->location.column = location.column - (int) lexemeLength;
 
     return token;
 }
