@@ -10,4 +10,7 @@
     % 45678)
 }
 
+// Floating number and negative numbers
+[12.345, -30, -3.1415]
+
 // Test case for the comment at the end of line

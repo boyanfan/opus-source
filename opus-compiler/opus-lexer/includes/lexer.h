@@ -25,7 +25,7 @@ typedef enum {
 typedef struct {
     LexerError lexerError;   // Current error state of the lexer
     Location location;       // Location information for error tracking
-    int isInClosure;         // Newline character inside a closure (between [...], (...) and <...>) is not a delimiter
+    int isInClosure;         // Newline character inside a closure (between [...] and (...)) is not a delimiter
 } Lexer;
 
 /// Reads the next token from the source code.

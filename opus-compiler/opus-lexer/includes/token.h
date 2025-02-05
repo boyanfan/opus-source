@@ -20,30 +20,40 @@
 #define ARITHMETIC_MODULO '%'
 #define CLOSING_ANGLE_BRACKET '>'
 #define EQUAL '='
+#define COMMA ','
+#define PERIOD '.'
 #define OPENING_BRACKET '('
 #define CLOSING_BRACKET ')'
 #define OPENING_CURLY_BRACKET '{'
 #define CLOSING_CURLY_BRACKET '}'
+#define OPENING_SQUARE_BRACKET '['
+#define CLOSING_SQUARE_BRACKET ']'
+#define ARITHMETIC_OPERATORS "+-*/%!="
+#define COMPARISON_OPERATORS "<>=!"
+#define CLOSING_CLOSURE "])}"
 #define NATIVE_OPERATORS "+-*/%!@#$&?~=.:>"
 
 /// Token types that need to be recognized by the lexer.
 typedef enum {
     TOKEN_EOF,                         // The end of the input file or stream
+    TOKEN_ERROR,                       // Invalid or unrecognized token
     TOKEN_NUMERIC,                     // Numeric values like "42", ...
     TOKEN_ARITHMETIC_ADDITION,         // Arithmetic addition operator "+"
     TOKEN_ARITHMETIC_SUBTRACTION,      // Arithmetic subtraction operator "-"
     TOKEN_ARITHMETIC_MULTIPLICATION,   // Arithmetic multiplication operator "*"
     TOKEN_ARITHMETIC_DIVISION,         // Arithmetic division operator "/"
     TOKEN_ARITHMETIC_MODULO,           // Arithmetic modulo operator "%"
-    TOKEN_ERROR,                       // Invalid or unrecognized token
     TOKEN_DELIMITER,                   // Delimiters like a newline character
     TOKEN_RIGHT_ARROW,                 // Function return type annotation "->"
     TOKEN_ASSIGNMENT,                  // Assignment operator "="
+    TOKEN_COMMA,                       // Comma ","
     TOKEN_LOGICAL_EQUIVALENCE,         // Logical equivalence operator "=="
     TOKEN_OPENING_BRACKET,             // Opening bracket "("
     TOKEN_CLOSING_BRACKET,             // Closing bracket ")"
     TOKEN_OPENING_CURLY_BRACKET,       // Opening curly bracket "{"
     TOKEN_CLOSING_CURLY_BRACKET,       // Opening curly bracket "}"
+    TOKEN_OPENING_SQUARE_BRACKET,      // Opening square bracket "["
+    TOKEN_CLOSING_SQUARE_BRACKET,      // Closing square bracket "["
 } TokenType;
 
 /// Error types for lexical analysis

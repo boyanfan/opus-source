@@ -18,7 +18,7 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // If the lexer has reached the end of the source code
     if (character == EOF) return initSafeToken(TOKEN_EOF, lexer->location, lexeme);
 
-    // A newline character is a delimiter if it is outside a closure (that is [...], (...) and <...>)
+    // A newline character is a delimiter if it is outside a closure (that is "[...]" and "(...)")
     if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
 
     // If the lexer has reached a numeric literal, try to lex it and handle any possible numeric token errors
@@ -134,16 +134,19 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         return initSafeToken(TOKEN_ASSIGNMENT, lexer->location, lexeme);
     }
 
+    // If the lexer has reached a comma
+    if (character == COMMA) return initSafeToken(TOKEN_COMMA, lexer->location, lexeme);
+
     // If the lexer has reached an opening bracket
     if (character == OPENING_BRACKET) {
-        // A newline character is not a delimiter if it is inside a closure (that is [...], (...) and <...>)
+        // A newline character is not a delimiter if it is inside a closure (that is [...] and (...))
         lexer->isInClosure++;
         return initSafeToken(TOKEN_OPENING_BRACKET, lexer->location, lexeme);
     }
 
     // If the lexer has reached an opening bracket
     if (character == CLOSING_BRACKET) {
-        // A newline character is not a delimiter if it is inside a closure (that is [...], (...) and <...>)
+        // A newline character is not a delimiter if it is inside a closure (that is [...] and (...))
         lexer->isInClosure--;
         return initSafeToken(TOKEN_CLOSING_BRACKET, lexer->location, lexeme);
     }
@@ -154,6 +157,18 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // If the lexer has reached a closing curly bracket
     if (character == CLOSING_CURLY_BRACKET) return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
 
+    // If the lexer has reached an opening square bracket
+    if (character == OPENING_SQUARE_BRACKET) {
+        lexer->isInClosure++;
+        return initSafeToken(TOKEN_OPENING_SQUARE_BRACKET, lexer->location, lexeme);
+    }
+
+    // If the lexer has reached a closing square bracket
+    if (character == CLOSING_SQUARE_BRACKET) {
+        lexer->isInClosure--;
+        return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer->location, lexeme);
+    }
+
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
 }
@@ -162,17 +177,49 @@ Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
     // Get ready for the next digit character
     int decimal = 1;
 
-    // Since newline character could be a delimiter, we must handle it before actually consuming it
-    while (isdigit(peekNextCharacter(sourceCode)) && decimal < LEXEME_LENGTH) {
+    // Track the floating position point of a number, where 0 for integers and 1 for floating values
+    int floatingPosition = 0;
+
+    // Peek the next character to check if we could terminate a numeric lexeme
+    int character = peekNextCharacter(sourceCode);
+
+    // Since newline character could be a delimiter, we must peek it before actually consuming it
+    while ((isdigit(character) || character == PERIOD) && decimal < LEXEME_LENGTH) {
+        if (character == PERIOD) floatingPosition++;
         lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
+        character = peekNextCharacter(sourceCode);
+    }
+
+    // It is malformed if there are multiple floating points
+    if (floatingPosition > 1) return initUnsafeToken(ERROR_MALFORMED_NUMERIC, lexer->location, lexeme);
+
+    // After parsing all digits, we check the next character since a numeric literal must end with
+    // 1. a whitespace;
+    // 2. a delimiter;
+    // 3. any arithmetic operator;
+    // 4. any comparison operators;
+    // 5. any closing closure ("}", ")", or "]");
+    // 6. A comma (",");
+    // 7. End of the source code (EOF)
+    if (isWhitespace(character) || character == '\n' || strchr(ARITHMETIC_OPERATORS, character) || character == EOF ||
+        strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURE, character) || character == COMMA) {
+        lexeme[decimal] = '\0';
+        return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+    }
+
+    // Collect all invalid characters
+    while (!(isWhitespace(character) || character == '\n' || strchr(ARITHMETIC_OPERATORS, character) ||
+           strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURE, character) || character == COMMA ||
+           character == EOF) && decimal < LEXEME_LENGTH) {
+        lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
+        character = peekNextCharacter(sourceCode);
     }
 
     // Check if the length of the numeric value could cause a buffer overflow
     if (decimal == LEXEME_LENGTH - 1) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
 
-    // Terminate lexeme if the number is successfully parsed
     lexeme[decimal] = '\0';
-    return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+    return initUnsafeToken(ERROR_MALFORMED_NUMERIC, lexer->location, lexeme);
 }
 
 int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence) {
@@ -330,6 +377,9 @@ void displayToken(Token token) {
         case TOKEN_CLOSING_BRACKET: printf("ClosingBracket"); break;
         case TOKEN_OPENING_CURLY_BRACKET: printf("OpeningCurlyBracket"); break;
         case TOKEN_CLOSING_CURLY_BRACKET: printf("ClosingCurlyBracket"); break;
+        case TOKEN_COMMA: printf("COMMA"); break;
+        case TOKEN_OPENING_SQUARE_BRACKET: printf("OpeningSquareBracket"); break;
+        case TOKEN_CLOSING_SQUARE_BRACKET: printf("ClosingSquareBracket"); break;
         default:;
     }
 
