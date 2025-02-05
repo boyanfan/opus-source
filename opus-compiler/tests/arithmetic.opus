@@ -4,6 +4,10 @@
 
     12 - 34 * 56
 
-78 * 90
+{
+    78 * 90 + ( 12345
+    // This should be valid since newline characters in a closure (between [...], (...) and <...>) are whitespaces
+    % 45678)
+}
 
 // Test case for the comment at the end of line

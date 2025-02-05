@@ -13,18 +13,37 @@
 
 #define LEXEME_LENGTH 128
 
+#define ARITHMETIC_ADDITION '+'
+#define ARITHMETIC_SUBTRACTION '-'
+#define ARITHMETIC_MULTIPLICATION '*'
+#define ARITHMETIC_DIVISION '/'
+#define ARITHMETIC_MODULO '%'
+#define CLOSING_ANGLE_BRACKET '>'
+#define EQUAL '='
+#define OPENING_BRACKET '('
+#define CLOSING_BRACKET ')'
+#define OPENING_CURLY_BRACKET '{'
+#define CLOSING_CURLY_BRACKET '}'
+#define NATIVE_OPERATORS "+-*/%!@#$&?~=.:>"
+
 /// Token types that need to be recognized by the lexer.
 typedef enum {
     TOKEN_EOF,                         // The end of the input file or stream
     TOKEN_NUMERIC,                     // Numeric values like "42", ...
-    TOKEN_ARITHMETIC_ADDITION,         // Arithmetic operators "+"
-    TOKEN_ARITHMETIC_SUBTRACTION,      // Arithmetic operators "-"
-    TOKEN_ARITHMETIC_MULTIPLICATION,   // Arithmetic operators "*"
-    TOKEN_ARITHMETIC_DIVISION,         // Arithmetic operators "/"
-    TOKEN_ARITHMETIC_MODULO,           // Arithmetic operators "%"
+    TOKEN_ARITHMETIC_ADDITION,         // Arithmetic addition operator "+"
+    TOKEN_ARITHMETIC_SUBTRACTION,      // Arithmetic subtraction operator "-"
+    TOKEN_ARITHMETIC_MULTIPLICATION,   // Arithmetic multiplication operator "*"
+    TOKEN_ARITHMETIC_DIVISION,         // Arithmetic division operator "/"
+    TOKEN_ARITHMETIC_MODULO,           // Arithmetic modulo operator "%"
     TOKEN_ERROR,                       // Invalid or unrecognized token
     TOKEN_DELIMITER,                   // Delimiters like a newline character
     TOKEN_RIGHT_ARROW,                 // Function return type annotation "->"
+    TOKEN_ASSIGNMENT,                  // Assignment operator "="
+    TOKEN_LOGICAL_EQUIVALENCE,         // Logical equivalence operator "=="
+    TOKEN_OPENING_BRACKET,             // Opening bracket "("
+    TOKEN_CLOSING_BRACKET,             // Closing bracket ")"
+    TOKEN_OPENING_CURLY_BRACKET,       // Opening curly bracket "{"
+    TOKEN_CLOSING_CURLY_BRACKET,       // Opening curly bracket "}"
 } TokenType;
 
 /// Error types for lexical analysis

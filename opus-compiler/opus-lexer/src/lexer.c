@@ -45,9 +45,19 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // If the lexer has reached an arithmetic subtraction operator
     if (character == ARITHMETIC_SUBTRACTION) {
         // Try to parse right arrow (`->`) operator that annotates the return type of functions
-        if (peekNextCharacter(sourceCode) == '>') {
+        if (peekNextCharacter(sourceCode) == CLOSING_ANGLE_BRACKET) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `->` should form and be recognized as an undefined operator
+            if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            }
+
             consumeNextCharacter(lexer, sourceCode);
-            return initSafeToken(TOKEN_RIGHT_ARROW, lexer->location, RIGHT_ARROW);
+            return initSafeToken(TOKEN_RIGHT_ARROW, lexer->location, lexeme);
         }
 
         // In the current phase, Opus does not support decrement operation (`--` or `-=`), therefore,
@@ -99,6 +109,54 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         return initSafeToken(TOKEN_ARITHMETIC_MODULO, lexer->location, lexeme);
     }
 
+    // If the lexer has reached an assignment operator
+    // In the current phase, Opus only support two operations starts with equal sign (`=`), that is,
+    // Assignment operation (`=`) and logical equivalence operator (`==`)
+    if (character == EQUAL) {
+        // First, try to match the logical equivalence operator (`==`)
+        if (peekNextCharacter(sourceCode) == EQUAL) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `==` should form and be recognized as an undefined operator
+            if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            }
+
+            return initSafeToken(TOKEN_LOGICAL_EQUIVALENCE, lexer->location, lexeme);
+        }
+
+        // Any additional symbol followed by operator `=` should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+        }
+
+        return initSafeToken(TOKEN_ASSIGNMENT, lexer->location, lexeme);
+    }
+
+    // If the lexer has reached an opening bracket
+    if (character == OPENING_BRACKET) {
+        // A newline character is not a delimiter if it is inside a closure (that is [...], (...) and <...>)
+        lexer->isInClosure++;
+        return initSafeToken(TOKEN_OPENING_BRACKET, lexer->location, lexeme);
+    }
+
+    // If the lexer has reached an opening bracket
+    if (character == CLOSING_BRACKET) {
+        // A newline character is not a delimiter if it is inside a closure (that is [...], (...) and <...>)
+        lexer->isInClosure--;
+        return initSafeToken(TOKEN_CLOSING_BRACKET, lexer->location, lexeme);
+    }
+
+    // If the lexer has reached an opening curly bracket
+    if (character == OPENING_CURLY_BRACKET) return initSafeToken(TOKEN_OPENING_CURLY_BRACKET, lexer->location, lexeme);
+
+    // If the lexer has reached a closing curly bracket
+    if (character == CLOSING_ANGLE_BRACKET) return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
+
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
 }
@@ -119,7 +177,8 @@ int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
     int character = consumeNextCharacter(lexer, sourceCode);
 
     // Consume the character only if the character is a whitespace
-    while (isWhitespace(character) && character != EOF) character = consumeNextCharacter(lexer, sourceCode);
+    while ((isWhitespace(character) || (lexer->isInClosure && character == '\n')) && character != EOF)
+        character = consumeNextCharacter(lexer, sourceCode);
 
     // If the character has reached a comment line (starts with `//`), consume the entire line
     if (character == '/' && peekNextCharacter(sourceCode) == '/') {
@@ -267,6 +326,11 @@ void displayToken(Token token) {
         case TOKEN_ARITHMETIC_MODULO: printf("ModuloOperator"); break;
         case TOKEN_EOF: printf("EOF"); break;
         case TOKEN_DELIMITER: printf("Delimiter"); break;
+        case TOKEN_RIGHT_ARROW: printf("RightArrow"); break;
+        case TOKEN_ASSIGNMENT: printf("Assignment"); break;
+        case TOKEN_LOGICAL_EQUIVALENCE: printf("LogicalEquivalence"); break;
+        case TOKEN_OPENING_BRACKET: printf("OpeningBracket"); break;
+        case TOKEN_CLOSING_BRACKET: printf("ClosingBracket"); break;
         default:;
     }
 
