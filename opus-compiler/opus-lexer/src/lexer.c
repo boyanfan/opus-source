@@ -56,8 +56,13 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
                 return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
             }
 
-            consumeNextCharacter(lexer, sourceCode);
             return initSafeToken(TOKEN_RIGHT_ARROW, lexer->location, lexeme);
+        }
+
+        // Handle Negative numbers
+        if (isdigit(peekNextCharacter(sourceCode))) {
+            parseNumeric(lexer, sourceCode, lexeme);
+            return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
         }
 
         // In the current phase, Opus does not support decrement operation (`--` or `-=`), therefore,
@@ -155,7 +160,7 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     if (character == OPENING_CURLY_BRACKET) return initSafeToken(TOKEN_OPENING_CURLY_BRACKET, lexer->location, lexeme);
 
     // If the lexer has reached a closing curly bracket
-    if (character == CLOSING_ANGLE_BRACKET) return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
+    if (character == CLOSING_CURLY_BRACKET) return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
 
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
@@ -170,7 +175,7 @@ int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedS
     }
 
     lexeme[position] = '\0';
-    return consumeNextCharacter(lexer, sourceCode);
+    return peekNextCharacter(sourceCode);
 }
 
 int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
@@ -331,6 +336,8 @@ void displayToken(Token token) {
         case TOKEN_LOGICAL_EQUIVALENCE: printf("LogicalEquivalence"); break;
         case TOKEN_OPENING_BRACKET: printf("OpeningBracket"); break;
         case TOKEN_CLOSING_BRACKET: printf("ClosingBracket"); break;
+        case TOKEN_OPENING_CURLY_BRACKET: printf("OpeningCurlyBracket"); break;
+        case TOKEN_CLOSING_CURLY_BRACKET: printf("ClosingCurlyBracket"); break;
         default:;
     }
 
