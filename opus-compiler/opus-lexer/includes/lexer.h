@@ -18,6 +18,7 @@
 #define ARITHMETIC_MULTIPLICATION '*'
 #define ARITHMETIC_DIVISION '/'
 #define ARITHMETIC_MODULO '%'
+#define RIGHT_ARROW "->"
 #define NATIVE_OPERATORS "+-*/%!@#$&?~=.:>"
 
 #include <stdio.h>
@@ -42,6 +43,16 @@ typedef struct {
 /// @return A pointer to a Token representing the next token in the source code.
 ///
 Token *getNextToken(Lexer *lexer, FILE* sourceCode);
+
+/// Skips the current token by collecting all invalid characters based on a given sequence.
+///
+/// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
+/// @param sourceCode A pointer to the source file to be read.
+/// \param lexeme A character buffer where the parsed numeric token will be stored.
+/// \param skippedSequence A string containing characters that should be skipped.
+/// \return The next character in the source file after skipping the invalid sequence.
+///
+int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence);
 
 /// Updates the location of the lexer to the start of the next token and return the current pointing character.
 ///
@@ -79,7 +90,16 @@ int peekNextCharacter(FILE *sourceCode);
 /// @param character The character currently being lexed to check.
 /// @return 1 (ture) if the character is a whitespace, 0 (false) otherwise.
 ///
-int isWhitespace(char character);
+int isWhitespace(int character);
+
+/// Parses a numeric token from the source file.
+///
+/// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
+/// @param sourceCode A pointer to the source file to be read.
+/// \param lexeme A character buffer where the parsed numeric token will be stored.
+/// \return A TokenError indicating whether parsing was successful or an error occurred.
+///
+TokenError parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme);
 
 /// Initializes a Lexer instance for processing source code.
 ///
@@ -95,7 +115,7 @@ Lexer *initLexer();
 /// @param filename The name of the file to open.
 /// @return A pointer to the opened file (FILE*) if successful, or NULL if an error occurred.
 ///
-FILE* openOpusSourceCode(const char *filename);
+FILE *openOpusSourceCode(const char *filename);
 
 /// Checks if the given file to compile has the '.opus' extension.
 ///

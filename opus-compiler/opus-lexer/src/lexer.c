@@ -21,39 +21,21 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // A newline character is a delimiter if it is outside a closure (that is [...], (...) and <...>)
     if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
 
-    // If the lexer has reached a numeric literal, lex it and handle any malformed numerics
+    // If the lexer has reached a numeric literal, try to lex it and handle any possible numeric token errors
     if (isdigit(character)) {
-        // Put the first character of the numeric value to the lexeme
-        int decimal = 0;
-        lexeme[decimal++] = (char) character;
+        TokenError tokenError = parseNumeric(lexer, sourceCode, lexeme);
 
-        // Since newline character could be a delimiter, we must handle it before actually consuming it
-        while (isdigit(peekNextCharacter(sourceCode)) && decimal < LEXEME_LENGTH) {
-            character = consumeNextCharacter(lexer, sourceCode);
-            lexeme[decimal++] = (char) character;
-        }
-
-        // Check if the length of the numeric value could cause a buffer overflow
-        if (decimal == LEXEME_LENGTH - 1) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
-
-        lexeme[decimal] = '\0';
-        return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+        if (tokenError == ERROR_TOKEN_NONE) return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+        else return initUnsafeToken(tokenError, lexer->location, lexeme);
     }
 
     // If the lexer has reached an arithmetic addition operator
     if (character == ARITHMETIC_ADDITION) {
-        // In the current phase, Opus does not support increment operation ('++'), therefore,
+        // In the current phase, Opus does not support increment operation (`++` or `+=`), therefore,
         // The only valid operator starts with addition symbol (`+`) should be itself, that is,
         // Any additional symbol followed by it should form and be recognized as an undefined operator
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
-            int position = 0;
-            lexeme[position++] = (char) character;
-
-            while (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
-                character = consumeNextCharacter(lexer, sourceCode);
-                lexeme[position++] = (char) character;
-            }
-
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
             return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
         }
 
@@ -61,30 +43,83 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     }
 
     // If the lexer has reached an arithmetic subtraction operator
-    if (character == ARITHMETIC_SUBTRACTION && peekNextCharacter(sourceCode) != ARITHMETIC_SUBTRACTION)
+    if (character == ARITHMETIC_SUBTRACTION) {
+        // Try to parse right arrow (`->`) operator that annotates the return type of functions
+        if (peekNextCharacter(sourceCode) == '>') {
+            consumeNextCharacter(lexer, sourceCode);
+            return initSafeToken(TOKEN_RIGHT_ARROW, lexer->location, RIGHT_ARROW);
+        }
+
+        // In the current phase, Opus does not support decrement operation (`--` or `-=`), therefore,
+        // The valid operators start with it (`-`) are arithmetic subtraction (`-`) and right arrow (`->`)
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+        }
+
         return initSafeToken(TOKEN_ARITHMETIC_SUBTRACTION, lexer->location, lexeme);
+    }
 
     // If the lexer has reached an arithmetic multiplication operator
-    if (character == ARITHMETIC_MULTIPLICATION && peekNextCharacter(sourceCode) != ARITHMETIC_MULTIPLICATION)
+    if (character == ARITHMETIC_MULTIPLICATION) {
+        // In the current phase, Opus does not support self multiplication operation (`*=`), therefore,
+        // The only valid operator starts with multiplication symbol (`*`) should be itself, that is,
+        // Any additional symbol followed by it should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+        }
+
         return initSafeToken(TOKEN_ARITHMETIC_MULTIPLICATION, lexer->location, lexeme);
+    }
 
     // If the lexer has reached an arithmetic division operator
-    if (character == ARITHMETIC_DIVISION && peekNextCharacter(sourceCode) != ARITHMETIC_DIVISION)
+    if (character == ARITHMETIC_DIVISION) {
+        // In the current phase, Opus does not support self division operation (`/=`), therefore,
+        // The only valid operator starts with division symbol (`/`) should be itself, that is,
+        // Any additional symbol followed by it should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+        }
+
         return initSafeToken(TOKEN_ARITHMETIC_DIVISION, lexer->location, lexeme);
+    }
 
     // If the lexer has reached an arithmetic modulo operator
-    if (character == ARITHMETIC_MODULO && peekNextCharacter(sourceCode) != ARITHMETIC_MODULO)
+    if (character == ARITHMETIC_MODULO) {
+        // In the current phase, Opus does not support self modulo operation (`%=`), therefore,
+        // The only valid operator starts with modulo symbol (`%`) should be itself, that is,
+        // Any additional symbol followed by it should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+        }
+
         return initSafeToken(TOKEN_ARITHMETIC_MODULO, lexer->location, lexeme);
+    }
 
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
+}
+
+int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence) {
+    int position = (int) strlen(lexeme);
+
+    // Collect all invalid characters
+    while (strchr(skippedSequence, peekNextCharacter(sourceCode))) {
+        lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+    }
+
+    lexeme[position] = '\0';
+    return consumeNextCharacter(lexer, sourceCode);
 }
 
 int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
     int character = consumeNextCharacter(lexer, sourceCode);
 
     // Consume the character only if the character is a whitespace
-    while (isWhitespace((char) character) && character != EOF) character = consumeNextCharacter(lexer, sourceCode);
+    while (isWhitespace(character) && character != EOF) character = consumeNextCharacter(lexer, sourceCode);
 
     // If the character has reached a comment line (starts with `//`), consume the entire line
     if (character == '/' && peekNextCharacter(sourceCode) == '/') {
@@ -98,7 +133,7 @@ int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
 int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode) {
     int character = peekNextCharacter(sourceCode);
 
-    while (character != '\n') character = consumeNextCharacter(lexer, sourceCode);
+    while (character != '\n' && character != EOF) character = consumeNextCharacter(lexer, sourceCode);
     return peekNextCharacter(sourceCode);
 }
 
@@ -118,8 +153,25 @@ int peekNextCharacter(FILE *sourceCode) {
     return character;
 }
 
-int isWhitespace(char character) {
+int isWhitespace(int character) {
     return (character == ' ' || character == '\t' || character == '\v' || character == '\r' || character == '\f');
+}
+
+TokenError parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
+    // Get ready for the next digit character
+    int decimal = 1;
+
+    // Since newline character could be a delimiter, we must handle it before actually consuming it
+    while (isdigit(peekNextCharacter(sourceCode)) && decimal < LEXEME_LENGTH) {
+        lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
+    }
+
+    // Check if the length of the numeric value could cause a buffer overflow
+    if (decimal == LEXEME_LENGTH - 1) return ERROR_OVERFLOW;
+
+    // Terminate lexeme if the number is successfully parsed
+    lexeme[decimal] = '\0';
+    return ERROR_TOKEN_NONE;
 }
 
 Lexer *initLexer() {
@@ -171,7 +223,7 @@ Token *initUnsafeToken(TokenError tokenError, Location location, const char *lex
     return token;
 }
 
-FILE* openOpusSourceCode(const char *filename) {
+FILE *openOpusSourceCode(const char *filename) {
     // Check if the file is Opus source code (with .opus extension)
     if (!isOpusSourceCode(filename)) {
         fprintf(stderr, "[FileTypeError]: File '%s' is not the Opus source code. (Must be .opus files)\n", filename);

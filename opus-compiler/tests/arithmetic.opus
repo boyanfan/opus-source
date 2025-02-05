@@ -2,6 +2,8 @@
     // This (starts with '//') is a comment in Opus and should be ignored by the compiler
     // Whitespaces (like the spaces before this line) should also be ignored
 
-    12 ++++ 34 * 56
+    12 - 34 * 56
 
 78 * 90
+
+// Test case for the comment at the end of line

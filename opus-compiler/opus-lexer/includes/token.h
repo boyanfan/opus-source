@@ -24,6 +24,7 @@ typedef enum {
     TOKEN_ARITHMETIC_MODULO,           // Arithmetic operators "%"
     TOKEN_ERROR,                       // Invalid or unrecognized token
     TOKEN_DELIMITER,                   // Delimiters like a newline character
+    TOKEN_RIGHT_ARROW,                 // Function return type annotation "->"
 } TokenType;
 
 /// Error types for lexical analysis
