@@ -41,8 +41,24 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     }
 
     // If the lexer has reached an arithmetic addition operator
-    if (character == ARITHMETIC_ADDITION && peekNextCharacter(sourceCode) != ARITHMETIC_ADDITION)
+    if (character == ARITHMETIC_ADDITION) {
+        // In the current phase, Opus does not support increment operation ('++'), therefore,
+        // The only valid operator starts with addition symbol (`+`) should be itself, that is,
+        // Any additional symbol followed by it should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            int position = 0;
+            lexeme[position++] = (char) character;
+
+            while (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+                character = consumeNextCharacter(lexer, sourceCode);
+                lexeme[position++] = (char) character;
+            }
+
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+        }
+
         return initSafeToken(TOKEN_ARITHMETIC_ADDITION, lexer->location, lexeme);
+    }
 
     // If the lexer has reached an arithmetic subtraction operator
     if (character == ARITHMETIC_SUBTRACTION && peekNextCharacter(sourceCode) != ARITHMETIC_SUBTRACTION)
@@ -187,7 +203,9 @@ int isOpusSourceCode(const char *filename) {
 }
 
 void displayToken(Token token) {
-    printf("<Token:");
+    if (token.tokenError == ERROR_TOKEN_NONE) printf("<Token:");
+    else printf("<ERROR:");
+
     switch (token.tokenType) {
         case TOKEN_NUMERIC: printf("Numeric"); break;
         case TOKEN_ARITHMETIC_ADDITION: printf("AdditionOperator"); break;
@@ -197,8 +215,7 @@ void displayToken(Token token) {
         case TOKEN_ARITHMETIC_MODULO: printf("ModuloOperator"); break;
         case TOKEN_EOF: printf("EOF"); break;
         case TOKEN_DELIMITER: printf("Delimiter"); break;
-        case TOKEN_ERROR: printf(" [ERROR] "); break;
-        default: printf("Unrecognizable");
+        default:;
     }
 
     switch (token.tokenError) {

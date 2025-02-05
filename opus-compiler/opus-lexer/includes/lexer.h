@@ -18,6 +18,7 @@
 #define ARITHMETIC_MULTIPLICATION '*'
 #define ARITHMETIC_DIVISION '/'
 #define ARITHMETIC_MODULO '%'
+#define NATIVE_OPERATORS "+-*/%!@#$&?~=.:>"
 
 #include <stdio.h>
 #include "token.h"
