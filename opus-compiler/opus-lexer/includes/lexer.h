@@ -13,6 +13,12 @@
 #define OPUS_FILE_EXTENSION  ".opus"
 #define READONLY_ACCESS      "r"
 
+#define ARITHMETIC_ADDITION '+'
+#define ARITHMETIC_SUBTRACTION '-'
+#define ARITHMETIC_MULTIPLICATION '*'
+#define ARITHMETIC_DIVISION '/'
+#define ARITHMETIC_MODULO '%'
+
 #include <stdio.h>
 #include "token.h"
 

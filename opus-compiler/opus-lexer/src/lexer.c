@@ -34,16 +34,31 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         }
 
         // Check if the length of the numeric value could cause a buffer overflow
-        if (decimal == LEXEME_LENGTH) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
+        if (decimal == LEXEME_LENGTH - 1) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
 
         lexeme[decimal] = '\0';
         return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
     }
 
-    // If the lexer has reached an arithmetic operator (i.e. '+', '-', '*', '/' and '%')
-    if (strchr("+-*/%", character) && !strchr("+-*/%", peekNextCharacter(sourceCode))) {
-        return initSafeToken(TOKEN_ARITHMETIC_OPERATOR, lexer->location, lexeme);
-    }
+    // If the lexer has reached an arithmetic addition operator
+    if (character == ARITHMETIC_ADDITION && peekNextCharacter(sourceCode) != ARITHMETIC_ADDITION)
+        return initSafeToken(TOKEN_ARITHMETIC_ADDITION, lexer->location, lexeme);
+
+    // If the lexer has reached an arithmetic subtraction operator
+    if (character == ARITHMETIC_SUBTRACTION && peekNextCharacter(sourceCode) != ARITHMETIC_SUBTRACTION)
+        return initSafeToken(TOKEN_ARITHMETIC_SUBTRACTION, lexer->location, lexeme);
+
+    // If the lexer has reached an arithmetic multiplication operator
+    if (character == ARITHMETIC_MULTIPLICATION && peekNextCharacter(sourceCode) != ARITHMETIC_MULTIPLICATION)
+        return initSafeToken(TOKEN_ARITHMETIC_MULTIPLICATION, lexer->location, lexeme);
+
+    // If the lexer has reached an arithmetic division operator
+    if (character == ARITHMETIC_DIVISION && peekNextCharacter(sourceCode) != ARITHMETIC_DIVISION)
+        return initSafeToken(TOKEN_ARITHMETIC_DIVISION, lexer->location, lexeme);
+
+    // If the lexer has reached an arithmetic modulo operator
+    if (character == ARITHMETIC_MODULO && peekNextCharacter(sourceCode) != ARITHMETIC_MODULO)
+        return initSafeToken(TOKEN_ARITHMETIC_MODULO, lexer->location, lexeme);
 
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
@@ -118,7 +133,7 @@ Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme)
 
     // Get the beginning location of the current token
     token->location.line = location.line;
-    token->location.column = location.column - (int) lexemeLength;
+    token->location.column = location.column - (int) lexemeLength + 1;
 
     return token;
 }
@@ -135,7 +150,7 @@ Token *initUnsafeToken(TokenError tokenError, Location location, const char *lex
 
     // Get the beginning location of the current token
     token->location.line = location.line;
-    token->location.column = location.column - (int) lexemeLength;
+    token->location.column = location.column - (int) lexemeLength + 1;
 
     return token;
 }
@@ -175,7 +190,11 @@ void displayToken(Token token) {
     printf("<Token:");
     switch (token.tokenType) {
         case TOKEN_NUMERIC: printf("Numeric"); break;
-        case TOKEN_ARITHMETIC_OPERATOR: printf("ArithmeticOperator"); break;
+        case TOKEN_ARITHMETIC_ADDITION: printf("AdditionOperator"); break;
+        case TOKEN_ARITHMETIC_SUBTRACTION: printf("SubtractionOperator"); break;
+        case TOKEN_ARITHMETIC_MULTIPLICATION: printf("MultiplicationOperator"); break;
+        case TOKEN_ARITHMETIC_DIVISION: printf("DivisionOperator"); break;
+        case TOKEN_ARITHMETIC_MODULO: printf("ModuloOperator"); break;
         case TOKEN_EOF: printf("EOF"); break;
         case TOKEN_DELIMITER: printf("Delimiter"); break;
         case TOKEN_ERROR: printf(" [ERROR] "); break;
@@ -184,6 +203,7 @@ void displayToken(Token token) {
 
     switch (token.tokenError) {
         case ERROR_MALFORMED_NUMERIC: printf("MalformedNumeric"); break;
+        case ERROR_UNDEFINED_OPERATOR: printf("UndefinedOperator"); break;
         default:;
     }
 

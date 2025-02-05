@@ -15,11 +15,15 @@
 
 /// Token types that need to be recognized by the lexer.
 typedef enum {
-    TOKEN_EOF,                   // The end of the input file or stream
-    TOKEN_NUMERIC,                // Numeric values like "42", ...
-    TOKEN_ARITHMETIC_OPERATOR,   // Arithmetic operators like "+", "-", "*" and "/", ...
-    TOKEN_ERROR,                 // Invalid or unrecognized token
-    TOKEN_DELIMITER,             // Delimiters like a newline character
+    TOKEN_EOF,                         // The end of the input file or stream
+    TOKEN_NUMERIC,                     // Numeric values like "42", ...
+    TOKEN_ARITHMETIC_ADDITION,         // Arithmetic operators "+"
+    TOKEN_ARITHMETIC_SUBTRACTION,      // Arithmetic operators "-"
+    TOKEN_ARITHMETIC_MULTIPLICATION,   // Arithmetic operators "*"
+    TOKEN_ARITHMETIC_DIVISION,         // Arithmetic operators "/"
+    TOKEN_ARITHMETIC_MODULO,           // Arithmetic operators "%"
+    TOKEN_ERROR,                       // Invalid or unrecognized token
+    TOKEN_DELIMITER,                   // Delimiters like a newline character
 } TokenType;
 
 /// Error types for lexical analysis
