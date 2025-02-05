@@ -15,11 +15,14 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // Handle the single character conversion from ASCII code (int) to lexeme (char*)
     char lexeme[LEXEME_LENGTH] = {(char) character, '\0'};
 
-    // If the lexer has reached the end of the source code
-    if (character == EOF) return initSafeToken(TOKEN_EOF, lexer->location, lexeme);
+    // If the lexer has reached the end of the source code, report any errors yet unresolved
+    if (character == EOF) {
+        reportLexerError(lexer);
+        return initSafeToken(TOKEN_EOF, lexer->location, lexeme);
+    }
 
     // A newline character is a delimiter if it is outside a closure (that is "[...]" and "(...)")
-    if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
+    if (character == '\n' && !isInClosure(lexer)) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
 
     // If the lexer has reached a numeric literal, try to lex it and handle any possible numeric token errors
     if (isdigit(character)) return parseNumeric(lexer, sourceCode, lexeme);
@@ -139,33 +142,37 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
 
     // If the lexer has reached an opening bracket
     if (character == OPENING_BRACKET) {
-        // A newline character is not a delimiter if it is inside a closure (that is [...] and (...))
-        lexer->isInClosure++;
+        lexer->isInClosure[BRACKET_CLOSURE]++;
         return initSafeToken(TOKEN_OPENING_BRACKET, lexer->location, lexeme);
     }
 
     // If the lexer has reached an opening bracket
     if (character == CLOSING_BRACKET) {
-        // A newline character is not a delimiter if it is inside a closure (that is [...] and (...))
-        lexer->isInClosure--;
+        lexer->isInClosure[BRACKET_CLOSURE]--;
         return initSafeToken(TOKEN_CLOSING_BRACKET, lexer->location, lexeme);
     }
 
     // If the lexer has reached an opening curly bracket
-    if (character == OPENING_CURLY_BRACKET) return initSafeToken(TOKEN_OPENING_CURLY_BRACKET, lexer->location, lexeme);
+    if (character == OPENING_CURLY_BRACKET) {
+        lexer->isInClosure[CURLY_BRACKET_CLOSURE]++;
+        return initSafeToken(TOKEN_OPENING_CURLY_BRACKET, lexer->location, lexeme);
+    }
 
     // If the lexer has reached a closing curly bracket
-    if (character == CLOSING_CURLY_BRACKET) return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
+    if (character == CLOSING_CURLY_BRACKET) {
+        lexer->isInClosure[CURLY_BRACKET_CLOSURE]--;
+        return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
+    }
 
     // If the lexer has reached an opening square bracket
     if (character == OPENING_SQUARE_BRACKET) {
-        lexer->isInClosure++;
+        lexer->isInClosure[SQUARE_BRACKET_CLOSURE]++;
         return initSafeToken(TOKEN_OPENING_SQUARE_BRACKET, lexer->location, lexeme);
     }
 
     // If the lexer has reached a closing square bracket
     if (character == CLOSING_SQUARE_BRACKET) {
-        lexer->isInClosure--;
+        lexer->isInClosure[SQUARE_BRACKET_CLOSURE]--;
         return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer->location, lexeme);
     }
 
@@ -238,7 +245,7 @@ int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
     int character = consumeNextCharacter(lexer, sourceCode);
 
     // Consume the character only if the character is a whitespace
-    while ((isWhitespace(character) || (lexer->isInClosure && character == '\n')) && character != EOF)
+    while ((isWhitespace(character) || (isInClosure(lexer) && character == '\n')) && character != EOF)
         character = consumeNextCharacter(lexer, sourceCode);
 
     // If the character has reached a comment line (starts with `//`), consume the entire line
@@ -273,8 +280,25 @@ int peekNextCharacter(FILE *sourceCode) {
     return character;
 }
 
+void reportLexerError(Lexer *lexer) {
+    if (lexer->isInClosure[BRACKET_CLOSURE] != 0) lexer->lexerError = ERROR_UNCLOSED_BRACKET;
+    if (lexer->isInClosure[CURLY_BRACKET_CLOSURE] != 0) lexer->lexerError = ERROR_UNCLOSED_CURLY_BRACKET;
+    if (lexer->isInClosure[SQUARE_BRACKET_CLOSURE] != 0) lexer->lexerError = ERROR_UNCLOSED_SQUARE_BRACKET;
+
+    switch (lexer->lexerError) {
+        case ERROR_UNCLOSED_BRACKET: printf("[ERROR]: Unclosed bracket occurs!"); break;
+        case ERROR_UNCLOSED_CURLY_BRACKET: printf("[ERROR]: Unclosed curly bracket occurs!"); break;
+        case ERROR_UNCLOSED_SQUARE_BRACKET: printf("[ERROR]: Unclosed square bracket occurs!"); break;
+        default:;
+    }
+}
+
 int isWhitespace(int character) {
     return (character == ' ' || character == '\t' || character == '\v' || character == '\r' || character == '\f');
+}
+
+int isInClosure(Lexer *lexer) {
+    return lexer->isInClosure[BRACKET_CLOSURE] || lexer->isInClosure[SQUARE_BRACKET_CLOSURE];
 }
 
 Lexer *initLexer() {
@@ -288,7 +312,7 @@ Lexer *initLexer() {
     // Initialize the lexer with no error at the beginning of the referenced source code
     lexer->lexerError = ERROR_LEXER_NONE;
     lexer->location = location;
-    lexer->isInClosure = 0;
+    for (int index = 0; index < 3; index++) lexer->isInClosure[index] = 0;
     return lexer;
 }
 
