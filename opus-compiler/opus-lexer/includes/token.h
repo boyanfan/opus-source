@@ -19,41 +19,52 @@
 #define ARITHMETIC_DIVISION '/'
 #define ARITHMETIC_MODULO '%'
 #define CLOSING_ANGLE_BRACKET '>'
-#define EQUAL '='
+#define OPENING_ANGLE_BRACKET '<'
+#define ASSIGNMENT_OPERATOR '='
 #define COMMA ','
 #define PERIOD '.'
+#define COLON ':'
 #define OPENING_BRACKET '('
 #define CLOSING_BRACKET ')'
 #define OPENING_CURLY_BRACKET '{'
 #define CLOSING_CURLY_BRACKET '}'
 #define OPENING_SQUARE_BRACKET '['
 #define CLOSING_SQUARE_BRACKET ']'
+#define EXCLAMATION_MARK '!'
 #define ARITHMETIC_OPERATORS "+-*/%!="
 #define COMPARISON_OPERATORS "<>=!"
-#define CLOSING_CLOSURE "])}"
+#define CLOSING_CLOSURES "])}"
 #define NATIVE_OPERATORS "+-*/%!@#$&?~=.:>"
 
 /// Token types that need to be recognized by the lexer.
 typedef enum {
-    TOKEN_EOF,                         // The end of the input file or stream
-    TOKEN_ERROR,                       // Invalid or unrecognized token
-    TOKEN_NUMERIC,                     // Numeric values like "42", ...
-    TOKEN_ARITHMETIC_ADDITION,         // Arithmetic addition operator "+"
-    TOKEN_ARITHMETIC_SUBTRACTION,      // Arithmetic subtraction operator "-"
-    TOKEN_ARITHMETIC_MULTIPLICATION,   // Arithmetic multiplication operator "*"
-    TOKEN_ARITHMETIC_DIVISION,         // Arithmetic division operator "/"
-    TOKEN_ARITHMETIC_MODULO,           // Arithmetic modulo operator "%"
-    TOKEN_DELIMITER,                   // Delimiters like a newline character
-    TOKEN_RIGHT_ARROW,                 // Function return type annotation "->"
-    TOKEN_ASSIGNMENT,                  // Assignment operator "="
-    TOKEN_COMMA,                       // Comma ","
-    TOKEN_LOGICAL_EQUIVALENCE,         // Logical equivalence operator "=="
-    TOKEN_OPENING_BRACKET,             // Opening bracket "("
-    TOKEN_CLOSING_BRACKET,             // Closing bracket ")"
-    TOKEN_OPENING_CURLY_BRACKET,       // Opening curly bracket "{"
-    TOKEN_CLOSING_CURLY_BRACKET,       // Opening curly bracket "}"
-    TOKEN_OPENING_SQUARE_BRACKET,      // Opening square bracket "["
-    TOKEN_CLOSING_SQUARE_BRACKET,      // Closing square bracket "["
+    TOKEN_EOF,                            // The end of the input file or stream
+    TOKEN_ERROR,                          // Invalid or unrecognized token
+    TOKEN_NUMERIC,                        // Numeric values like "42", ...
+    TOKEN_ARITHMETIC_ADDITION,            // Arithmetic addition operator "+"
+    TOKEN_ARITHMETIC_SUBTRACTION,         // Arithmetic subtraction operator "-"
+    TOKEN_ARITHMETIC_MULTIPLICATION,      // Arithmetic multiplication operator "*"
+    TOKEN_ARITHMETIC_DIVISION,            // Arithmetic division operator "/"
+    TOKEN_ARITHMETIC_MODULO,              // Arithmetic modulo operator "%"
+    TOKEN_DELIMITER,                      // Delimiters like a newline character
+    TOKEN_RIGHT_ARROW,                    // Function return type annotation "->"
+    TOKEN_ASSIGNMENT_OPERATOR,            // Assignment operator "="
+    TOKEN_COMMA,                          // Comma ","
+    TOKEN_COLON,                          // Comma ":"
+    TOKEN_LOGICAL_EQUIVALENCE,            // Logical equivalence operator "=="
+    TOKEN_OPENING_BRACKET,                // Opening bracket "("
+    TOKEN_CLOSING_BRACKET,                // Closing bracket ")"
+    TOKEN_OPENING_CURLY_BRACKET,          // Opening curly bracket "{"
+    TOKEN_CLOSING_CURLY_BRACKET,          // Opening curly bracket "}"
+    TOKEN_OPENING_SQUARE_BRACKET,         // Opening square bracket "["
+    TOKEN_CLOSING_SQUARE_BRACKET,         // Closing square bracket "["
+    TOKEN_ARITHMETIC_FACTORIAL,           // Arithmetic factorial operator "!"
+    TOKEN_LOGICAL_NEGATION,               // Logical negation operator "!"
+    TOKEN_NOT_EQUAL_TO_OPERATOR,          // Not equal to operator "!="
+    TOKEN_LESS_THAN_OPERATOR,             // Less than operator "<"
+    TOKEN_LESS_OR_EQUAL_TO_OPERATOR,      // Less or equal to operator "<="
+    TOKEN_GREATER_THAN_OPERATOR,          // Greater than operator ">"
+    TOKEN_GREATER_OR_EQUAL_TO_OPERATOR,   // greater or equal to operator ">="
 } TokenType;
 
 /// Error types for lexical analysis
@@ -78,27 +89,5 @@ typedef struct {
     Location location;            // The location of the token in the source code (line and column).
     char lexeme[LEXEME_LENGTH];   // The actual content (lexeme) of the token.
 } Token;
-
-/// Initializes a new Token instance safely with the given type and location.
-///
-/// This function creates a new Token and initializes its fields with the specified type and location.
-/// The term "safe" indicates that this function does not handle or propagate errors, meaning it does not require
-/// passing a `TokenError`. It assumes the inputs are valid and allocates memory for the token.
-///
-/// @param tokenType The type of the token (e.g., identifier, keyword, symbol).
-/// @param location The location information of the token, typically used for debugging or error reporting.
-/// @param lexeme The content (lexeme) of the token to be stored.
-/// @return A pointer to the newly created Token, or NULL if memory allocation fails.
-///
-Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme);
-
-/// Initializes a new Token instance with the given error and location.
-///
-/// @param tokenError The error associated with the token, describing why it could not be initialized normally.
-/// @param location The location information of the token, typically used for debugging or error reporting.
-/// @param lexeme The content (lexeme) of the token to be stored.
-/// @return A pointer to the newly created Token, or NULL if memory allocation fails.
-///
-Token *initUnsafeToken(TokenError tokenError, Location location, const char *lexeme);
 
 #endif /* TOKEN_H */

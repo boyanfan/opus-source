@@ -29,9 +29,10 @@ typedef enum {
 
 /// This structure holds the current error state, location information and current lexing status.
 typedef struct {
-    LexerError lexerError;   // Current error state of the lexer
-    Location location;       // Location information for error tracking
-    int isInClosure[3];      // A vector to indicate if the lexer is inside a closure (between [...], (...) and {...})
+    LexerError lexerError;         // Current error state of the lexer
+    Location location;             // Location information for error tracking
+    TokenType previousTokenType;   // Store the previous token type for postfix operator (like factorial `!`)
+    int isInClosure[3];      // A vector to indicate if the lexer is inside a closure (between [...], (...) or {...})
 } Lexer;
 
 /// Reads the next token from the source code.
@@ -120,6 +121,28 @@ int isInClosure(Lexer *lexer);
 /// use function 'FILE *openOpusSourceCode(const char*)' to safely open an Opus source code.
 ///
 Lexer *initLexer();
+
+/// Initializes a new Token instance safely with the given type and location.
+///
+/// This function creates a new Token and initializes its fields with the specified type and location.
+/// The term "safe" indicates that this function does not handle or propagate errors, meaning it does not require
+/// passing a `TokenError`. It assumes the inputs are valid and allocates memory for the token.
+///
+/// @param tokenType The type of the token (e.g., identifier, keyword, symbol).
+/// @param location The location information of the token, typically used for debugging or error reporting.
+/// @param lexeme The content (lexeme) of the token to be stored.
+/// @return A pointer to the newly created Token, or NULL if memory allocation fails.
+///
+Token *initSafeToken(TokenType tokenType, Lexer *lexer, const char *lexeme);
+
+/// Initializes a new Token instance with the given error and location.
+///
+/// @param tokenError The error associated with the token, describing why it could not be initialized normally.
+/// @param location The location information of the token, typically used for debugging or error reporting.
+/// @param lexeme The content (lexeme) of the token to be stored.
+/// @return A pointer to the newly created Token, or NULL if memory allocation fails.
+///
+Token *initUnsafeToken(TokenError tokenError, Lexer *lexer, const char *lexeme);
 
 /// Using this function to access an Opus source file is recommended.
 ///

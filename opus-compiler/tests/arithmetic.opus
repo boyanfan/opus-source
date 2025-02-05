@@ -11,6 +11,6 @@
 }
 
 // Floating number and negative numbers
-[12.345, -30, -3.1415]
+[12.345, -30, -3.1415, 6!]
 
 // Test case for the comment at the end of line

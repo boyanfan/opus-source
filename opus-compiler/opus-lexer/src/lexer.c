@@ -18,11 +18,11 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // If the lexer has reached the end of the source code, report any errors yet unresolved
     if (character == EOF) {
         reportLexerError(lexer);
-        return initSafeToken(TOKEN_EOF, lexer->location, lexeme);
+        return initSafeToken(TOKEN_EOF, lexer, lexeme);
     }
 
     // A newline character is a delimiter if it is outside a closure (that is "[...]" and "(...)")
-    if (character == '\n' && !isInClosure(lexer)) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
+    if (character == '\n' && !isInClosure(lexer)) return initSafeToken(TOKEN_DELIMITER, lexer, lexeme);
 
     // If the lexer has reached a numeric literal, try to lex it and handle any possible numeric token errors
     if (isdigit(character)) return parseNumeric(lexer, sourceCode, lexeme);
@@ -34,10 +34,10 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         // Any additional symbol followed by it should form and be recognized as an undefined operator
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
             skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
         }
 
-        return initSafeToken(TOKEN_ARITHMETIC_ADDITION, lexer->location, lexeme);
+        return initSafeToken(TOKEN_ARITHMETIC_ADDITION, lexer, lexeme);
     }
 
     // If the lexer has reached an arithmetic subtraction operator
@@ -51,10 +51,10 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
             // Any additional symbol followed by operator `->` should form and be recognized as an undefined operator
             if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
                 skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
             }
 
-            return initSafeToken(TOKEN_RIGHT_ARROW, lexer->location, lexeme);
+            return initSafeToken(TOKEN_RIGHT_ARROW, lexer, lexeme);
         }
 
         // Handle Negative numbers
@@ -64,10 +64,10 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         // The valid operators start with it (`-`) are arithmetic subtraction (`-`) and right arrow (`->`)
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
             skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
         }
 
-        return initSafeToken(TOKEN_ARITHMETIC_SUBTRACTION, lexer->location, lexeme);
+        return initSafeToken(TOKEN_ARITHMETIC_SUBTRACTION, lexer, lexeme);
     }
 
     // If the lexer has reached an arithmetic multiplication operator
@@ -77,10 +77,10 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         // Any additional symbol followed by it should form and be recognized as an undefined operator
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
             skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
         }
 
-        return initSafeToken(TOKEN_ARITHMETIC_MULTIPLICATION, lexer->location, lexeme);
+        return initSafeToken(TOKEN_ARITHMETIC_MULTIPLICATION, lexer, lexeme);
     }
 
     // If the lexer has reached an arithmetic division operator
@@ -90,10 +90,10 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         // Any additional symbol followed by it should form and be recognized as an undefined operator
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
             skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
         }
 
-        return initSafeToken(TOKEN_ARITHMETIC_DIVISION, lexer->location, lexeme);
+        return initSafeToken(TOKEN_ARITHMETIC_DIVISION, lexer, lexeme);
     }
 
     // If the lexer has reached an arithmetic modulo operator
@@ -103,18 +103,18 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         // Any additional symbol followed by it should form and be recognized as an undefined operator
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
             skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
         }
 
-        return initSafeToken(TOKEN_ARITHMETIC_MODULO, lexer->location, lexeme);
+        return initSafeToken(TOKEN_ARITHMETIC_MODULO, lexer, lexeme);
     }
 
     // If the lexer has reached an assignment operator
-    // In the current phase, Opus only support two operations starts with equal sign (`=`), that is,
-    // Assignment operation (`=`) and logical equivalence operator (`==`)
-    if (character == EQUAL) {
-        // First, try to match the logical equivalence operator (`==`)
-        if (peekNextCharacter(sourceCode) == EQUAL) {
+    if (character == ASSIGNMENT_OPERATOR) {
+        // In the current phase, Opus only supports two operations starts with equal sign (`=`), that is,
+        // Assignment operation (`=`) and logical equivalence operator (`==`), therefore,
+        // First try to match the logical equivalence operator (`==`)
+        if (peekNextCharacter(sourceCode) == ASSIGNMENT_OPERATOR) {
             int position = (int) strlen(lexeme);
             lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
             lexeme[position] = '\0';
@@ -122,62 +122,158 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
             // Any additional symbol followed by operator `==` should form and be recognized as an undefined operator
             if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
                 skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
             }
 
-            return initSafeToken(TOKEN_LOGICAL_EQUIVALENCE, lexer->location, lexeme);
+            return initSafeToken(TOKEN_LOGICAL_EQUIVALENCE, lexer, lexeme);
         }
 
         // Any additional symbol followed by operator `=` should form and be recognized as an undefined operator
         if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
             skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
-            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer->location, lexeme);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
         }
 
-        return initSafeToken(TOKEN_ASSIGNMENT, lexer->location, lexeme);
+        return initSafeToken(TOKEN_ASSIGNMENT_OPERATOR, lexer, lexeme);
+    }
+
+    // If the lexer has reached a negation operation (`!`)
+    if (character == EXCLAMATION_MARK) {
+        // If it is placed after an integer token, it should be recognized as an arithmetic factorial operator
+        if (lexer->previousTokenType == TOKEN_NUMERIC) return initSafeToken(TOKEN_ARITHMETIC_FACTORIAL, lexer, lexeme);
+
+        // If it is followed by an assignment operator (`=`), it is not equal to operator (`!=`)
+        // Note that the arithmetic factorial operator has higher precedence than it
+        if (peekNextCharacter(sourceCode) == ASSIGNMENT_OPERATOR) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `!=` should form and be recognized as an undefined operator
+            if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+            }
+
+            return initSafeToken(TOKEN_NOT_EQUAL_TO_OPERATOR, lexer, lexeme);
+        }
+
+        // If it stands alone, it should be recognized as a logical negation operator
+        // Any additional symbol followed by operator `!` should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+        }
+
+        return initSafeToken(TOKEN_LOGICAL_NEGATION, lexer, lexeme);
+    }
+
+    // If the lexer has reached an opening angle bracket (`<`)
+    if (character == OPENING_ANGLE_BRACKET) {
+        // Try to match the less or equal to operator (`<=`)
+        if (peekNextCharacter(sourceCode) == ASSIGNMENT_OPERATOR) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `==` should form and be recognized as an undefined operator
+            if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+            }
+
+            return initSafeToken(TOKEN_LESS_OR_EQUAL_TO_OPERATOR, lexer, lexeme);
+        }
+
+        // In the current phase, Opus does not support logical or arithmetic left shift operation (`<<`), therefore,
+        // Any additional symbol followed by it should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+        }
+
+        return initSafeToken(TOKEN_LESS_THAN_OPERATOR, lexer, lexeme);
+    }
+
+    // If the lexer has reached a closing angle bracket (`>`)
+    if (character == CLOSING_ANGLE_BRACKET) {
+        // Try to match the less or equal to operator (`>=`)
+        if (peekNextCharacter(sourceCode) == ASSIGNMENT_OPERATOR) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `==` should form and be recognized as an undefined operator
+            if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+            }
+
+            return initSafeToken(TOKEN_GREATER_OR_EQUAL_TO_OPERATOR, lexer, lexeme);
+        }
+
+        // In the current phase, Opus does not support logical or arithmetic right shift operation (`>>`), therefore,
+        // Any additional symbol followed by it should form and be recognized as an undefined operator
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+        }
+
+        return initSafeToken(TOKEN_GREATER_THAN_OPERATOR, lexer, lexeme);
     }
 
     // If the lexer has reached a comma
-    if (character == COMMA) return initSafeToken(TOKEN_COMMA, lexer->location, lexeme);
+    if (character == COMMA) return initSafeToken(TOKEN_COMMA, lexer, lexeme);
+
+    // If the lexer has reached a colon
+    if (character == COLON) {
+        // In the current phase, Opus only supports using a single colon (`:`) to annotate types
+        if (strchr(NATIVE_OPERATORS, peekNextCharacter(sourceCode))) {
+            skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+            return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+        }
+
+        return initSafeToken(TOKEN_COLON, lexer, lexeme);
+    }
 
     // If the lexer has reached an opening bracket
     if (character == OPENING_BRACKET) {
         lexer->isInClosure[BRACKET_CLOSURE]++;
-        return initSafeToken(TOKEN_OPENING_BRACKET, lexer->location, lexeme);
+        return initSafeToken(TOKEN_OPENING_BRACKET, lexer, lexeme);
     }
 
     // If the lexer has reached an opening bracket
     if (character == CLOSING_BRACKET) {
         lexer->isInClosure[BRACKET_CLOSURE]--;
-        return initSafeToken(TOKEN_CLOSING_BRACKET, lexer->location, lexeme);
+        return initSafeToken(TOKEN_CLOSING_BRACKET, lexer, lexeme);
     }
 
     // If the lexer has reached an opening curly bracket
     if (character == OPENING_CURLY_BRACKET) {
         lexer->isInClosure[CURLY_BRACKET_CLOSURE]++;
-        return initSafeToken(TOKEN_OPENING_CURLY_BRACKET, lexer->location, lexeme);
+        return initSafeToken(TOKEN_OPENING_CURLY_BRACKET, lexer, lexeme);
     }
 
     // If the lexer has reached a closing curly bracket
     if (character == CLOSING_CURLY_BRACKET) {
         lexer->isInClosure[CURLY_BRACKET_CLOSURE]--;
-        return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer->location, lexeme);
+        return initSafeToken(TOKEN_CLOSING_CURLY_BRACKET, lexer, lexeme);
     }
 
     // If the lexer has reached an opening square bracket
     if (character == OPENING_SQUARE_BRACKET) {
         lexer->isInClosure[SQUARE_BRACKET_CLOSURE]++;
-        return initSafeToken(TOKEN_OPENING_SQUARE_BRACKET, lexer->location, lexeme);
+        return initSafeToken(TOKEN_OPENING_SQUARE_BRACKET, lexer, lexeme);
     }
 
     // If the lexer has reached a closing square bracket
     if (character == CLOSING_SQUARE_BRACKET) {
         lexer->isInClosure[SQUARE_BRACKET_CLOSURE]--;
-        return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer->location, lexeme);
+        return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer, lexeme);
     }
 
     // If unable to recognize the token
-    return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
+    return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer, lexeme);
 }
 
 Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
@@ -198,35 +294,35 @@ Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
     }
 
     // It is malformed if there are multiple floating points
-    if (floatingPosition > 1) return initUnsafeToken(ERROR_MALFORMED_NUMERIC, lexer->location, lexeme);
+    if (floatingPosition > 1) return initUnsafeToken(ERROR_MALFORMED_NUMERIC, lexer, lexeme);
 
     // After parsing all digits, we check the next character since a numeric literal must end with
     // 1. a whitespace;
     // 2. a delimiter;
-    // 3. any arithmetic operator;
-    // 4. any comparison operators;
+    // 3. any arithmetic operator (+-*/%!=);
+    // 4. any comparison operators (<>=!);
     // 5. any closing closure ("}", ")", or "]");
     // 6. A comma (",");
     // 7. End of the source code (EOF)
     if (isWhitespace(character) || character == '\n' || strchr(ARITHMETIC_OPERATORS, character) || character == EOF ||
-        strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURE, character) || character == COMMA) {
+        strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURES, character) || character == COMMA) {
         lexeme[decimal] = '\0';
-        return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+        return initSafeToken(TOKEN_NUMERIC, lexer, lexeme);
     }
 
     // Collect all invalid characters
     while (!(isWhitespace(character) || character == '\n' || strchr(ARITHMETIC_OPERATORS, character) ||
-           strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURE, character) || character == COMMA ||
+           strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURES, character) || character == COMMA ||
            character == EOF) && decimal < LEXEME_LENGTH) {
         lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
         character = peekNextCharacter(sourceCode);
     }
 
     // Check if the length of the numeric value could cause a buffer overflow
-    if (decimal == LEXEME_LENGTH - 1) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
+    if (decimal == LEXEME_LENGTH - 1) return initUnsafeToken(ERROR_OVERFLOW, lexer, lexeme);
 
     lexeme[decimal] = '\0';
-    return initUnsafeToken(ERROR_MALFORMED_NUMERIC, lexer->location, lexeme);
+    return initUnsafeToken(ERROR_MALFORMED_NUMERIC, lexer, lexeme);
 }
 
 int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence) {
@@ -312,11 +408,13 @@ Lexer *initLexer() {
     // Initialize the lexer with no error at the beginning of the referenced source code
     lexer->lexerError = ERROR_LEXER_NONE;
     lexer->location = location;
+    lexer->previousTokenType = TOKEN_ERROR;
     for (int index = 0; index < 3; index++) lexer->isInClosure[index] = 0;
+
     return lexer;
 }
 
-Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme) {
+Token *initSafeToken(TokenType tokenType, Lexer *lexer, const char *lexeme) {
     Token *token = (Token*) malloc(sizeof(Token));
 
     token->tokenError = ERROR_TOKEN_NONE;
@@ -327,13 +425,14 @@ Token *initSafeToken(TokenType tokenType, Location location, const char *lexeme)
     token->lexeme[lexemeLength] = '\0';
 
     // Get the beginning location of the current token
-    token->location.line = location.line;
-    token->location.column = location.column - (int) lexemeLength + 1;
+    token->location.line = lexer->location.line;
+    token->location.column = lexer->location.column - (int) lexemeLength + 1;
 
+    lexer->previousTokenType = tokenType;
     return token;
 }
 
-Token *initUnsafeToken(TokenError tokenError, Location location, const char *lexeme) {
+Token *initUnsafeToken(TokenError tokenError, Lexer *lexer, const char *lexeme) {
     Token *token = (Token*) malloc(sizeof(Token));
 
     token->tokenType = TOKEN_ERROR;
@@ -344,9 +443,10 @@ Token *initUnsafeToken(TokenError tokenError, Location location, const char *lex
     token->lexeme[lexemeLength] = '\0';
 
     // Get the beginning location of the current token
-    token->location.line = location.line;
-    token->location.column = location.column - (int) lexemeLength + 1;
+    token->location.line = lexer->location.line;
+    token->location.column = lexer->location.column - (int) lexemeLength + 1;
 
+    lexer->previousTokenType = TOKEN_ERROR;
     return token;
 }
 
@@ -395,15 +495,23 @@ void displayToken(Token token) {
         case TOKEN_EOF: printf("EOF"); break;
         case TOKEN_DELIMITER: printf("Delimiter"); break;
         case TOKEN_RIGHT_ARROW: printf("RightArrow"); break;
-        case TOKEN_ASSIGNMENT: printf("Assignment"); break;
+        case TOKEN_ASSIGNMENT_OPERATOR: printf("AssignmentOperator"); break;
         case TOKEN_LOGICAL_EQUIVALENCE: printf("LogicalEquivalence"); break;
         case TOKEN_OPENING_BRACKET: printf("OpeningBracket"); break;
         case TOKEN_CLOSING_BRACKET: printf("ClosingBracket"); break;
         case TOKEN_OPENING_CURLY_BRACKET: printf("OpeningCurlyBracket"); break;
         case TOKEN_CLOSING_CURLY_BRACKET: printf("ClosingCurlyBracket"); break;
-        case TOKEN_COMMA: printf("COMMA"); break;
+        case TOKEN_COMMA: printf("Comma"); break;
+        case TOKEN_COLON: printf("Colon"); break;
         case TOKEN_OPENING_SQUARE_BRACKET: printf("OpeningSquareBracket"); break;
         case TOKEN_CLOSING_SQUARE_BRACKET: printf("ClosingSquareBracket"); break;
+        case TOKEN_LOGICAL_NEGATION: printf("LogicalNegationOperator"); break;
+        case TOKEN_ARITHMETIC_FACTORIAL: printf("ArithmeticFactorialOperator"); break;
+        case TOKEN_NOT_EQUAL_TO_OPERATOR: printf("NotEqualToOperator"); break;
+        case TOKEN_LESS_THAN_OPERATOR: printf("LessThanOperator"); break;
+        case TOKEN_LESS_OR_EQUAL_TO_OPERATOR: printf("LessOrEqualToOperator"); break;
+        case TOKEN_GREATER_THAN_OPERATOR: printf("GreaterThanOperator"); break;
+        case TOKEN_GREATER_OR_EQUAL_TO_OPERATOR: printf("GreaterOrEqualOperator"); break;
         default:;
     }
 
