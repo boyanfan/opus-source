@@ -22,12 +22,7 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     if (character == '\n' && !lexer->isInClosure) return initSafeToken(TOKEN_DELIMITER, lexer->location, lexeme);
 
     // If the lexer has reached a numeric literal, try to lex it and handle any possible numeric token errors
-    if (isdigit(character)) {
-        TokenError tokenError = parseNumeric(lexer, sourceCode, lexeme);
-
-        if (tokenError == ERROR_TOKEN_NONE) return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
-        else return initUnsafeToken(tokenError, lexer->location, lexeme);
-    }
+    if (isdigit(character)) return parseNumeric(lexer, sourceCode, lexeme);
 
     // If the lexer has reached an arithmetic addition operator
     if (character == ARITHMETIC_ADDITION) {
@@ -60,10 +55,7 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         }
 
         // Handle Negative numbers
-        if (isdigit(peekNextCharacter(sourceCode))) {
-            parseNumeric(lexer, sourceCode, lexeme);
-            return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
-        }
+        if (isdigit(peekNextCharacter(sourceCode))) return parseNumeric(lexer, sourceCode, lexeme);
 
         // In the current phase, Opus does not support decrement operation (`--` or `-=`), therefore,
         // The valid operators start with it (`-`) are arithmetic subtraction (`-`) and right arrow (`->`)
@@ -166,6 +158,23 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer->location, lexeme);
 }
 
+Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
+    // Get ready for the next digit character
+    int decimal = 1;
+
+    // Since newline character could be a delimiter, we must handle it before actually consuming it
+    while (isdigit(peekNextCharacter(sourceCode)) && decimal < LEXEME_LENGTH) {
+        lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
+    }
+
+    // Check if the length of the numeric value could cause a buffer overflow
+    if (decimal == LEXEME_LENGTH - 1) return initUnsafeToken(ERROR_OVERFLOW, lexer->location, lexeme);
+
+    // Terminate lexeme if the number is successfully parsed
+    lexeme[decimal] = '\0';
+    return initSafeToken(TOKEN_NUMERIC, lexer->location, lexeme);
+}
+
 int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence) {
     int position = (int) strlen(lexeme);
 
@@ -219,23 +228,6 @@ int peekNextCharacter(FILE *sourceCode) {
 
 int isWhitespace(int character) {
     return (character == ' ' || character == '\t' || character == '\v' || character == '\r' || character == '\f');
-}
-
-TokenError parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
-    // Get ready for the next digit character
-    int decimal = 1;
-
-    // Since newline character could be a delimiter, we must handle it before actually consuming it
-    while (isdigit(peekNextCharacter(sourceCode)) && decimal < LEXEME_LENGTH) {
-        lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
-    }
-
-    // Check if the length of the numeric value could cause a buffer overflow
-    if (decimal == LEXEME_LENGTH - 1) return ERROR_OVERFLOW;
-
-    // Terminate lexeme if the number is successfully parsed
-    lexeme[decimal] = '\0';
-    return ERROR_TOKEN_NONE;
 }
 
 Lexer *initLexer() {

@@ -36,6 +36,15 @@ typedef struct {
 ///
 Token *getNextToken(Lexer *lexer, FILE* sourceCode);
 
+/// Parses a numeric token from the source file.
+///
+/// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
+/// @param sourceCode A pointer to the source file to be read.
+/// \param lexeme A character buffer where the parsed numeric token will be stored.
+/// \return A pointer to a Token representing the numeric token in the source code.
+///
+Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme);
+
 /// Skips the current token by collecting all invalid characters based on a given sequence.
 ///
 /// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
@@ -83,15 +92,6 @@ int peekNextCharacter(FILE *sourceCode);
 /// @return 1 (ture) if the character is a whitespace, 0 (false) otherwise.
 ///
 int isWhitespace(int character);
-
-/// Parses a numeric token from the source file.
-///
-/// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
-/// @param sourceCode A pointer to the source file to be read.
-/// \param lexeme A character buffer where the parsed numeric token will be stored.
-/// \return A TokenError indicating whether parsing was successful or an error occurred.
-///
-TokenError parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme);
 
 /// Initializes a Lexer instance for processing source code.
 ///
