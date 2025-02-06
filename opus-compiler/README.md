@@ -131,6 +131,24 @@ context-free, we must introduce some context in the program for an elegant imple
 TokenType lexer->previousTokenType;
 ```
 
+### Read from Lexer Output
+For any error-free tokens, the Opus lexer display a `<Token>` with its token type, 
+its lexeme and its location in the source file (in the format of `line:colomn`), 
+as an example displayed below.
+
+```text
+<Token:Numeric, Lexeme:"-56.7"> at location 2:14
+```
+
+If any error occurs, the Opus lexer display a `<ERROR>` with its error type,
+its lexeme and the location where the error occurs (in the format of `line:colomn`),
+as an example displayed below. Then the lexer keep lexing source codes until
+the end of the file has been reached.
+
+```text
+<ERROR:UndefinedOperator, Lexeme:"==="> at location 16:2
+```
+
 ## Design Considerations
 When designing the Opus programming language, one of the key decisions was
 whether to use a keyword-based primitive type system similar to C (e.g., int, float), 
@@ -143,8 +161,8 @@ system that is, **safe**, ensuring uniform type safety; **flexible**, allowing n
 types to be extended like custom types; and **expressive**, providing a unified syntax 
 for type annotation and customization.
 
-Therefore, when we lexing the following statement, token `Int` should be **an identifier
-that associates with the integer value type**, instead of a keyword. 
+Therefore, for example, when we lexing the following statement, token `Int` should be 
+**an identifier that associates with the integer value type**, instead of a keyword. 
 
 ```Opus
 let assignmentGrade: Int = 100
@@ -152,7 +170,7 @@ let assignmentGrade: Int = 100
 
 ---
 
-## Next Step
+### Next Step
 In Phase 2 we extend the existing lexer by adding a parser that constructs a syntax tree,
 based on a manually defined Context-Free Grammars (CFGs). The parser will validate 
 the syntactic structure of Opus programs to ensure that statements and expressions 
