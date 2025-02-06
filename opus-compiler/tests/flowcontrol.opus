@@ -8,7 +8,7 @@ if (temperature <= 0) {
 
 // We want to calculate 3!, the factorial of 3
 var result: Int = 3
-for number in 1...3 {
+for number in range(1, 3) {
 	result = result * number   // Looping over number equals to 1 and 2
 }
 

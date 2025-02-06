@@ -140,7 +140,8 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
     // If the lexer has reached a negation operation (`!`)
     if (character == EXCLAMATION_MARK) {
         // If it is placed after an integer token, it should be recognized as an arithmetic factorial operator
-        if (lexer->previousTokenType == TOKEN_NUMERIC) return initSafeToken(TOKEN_ARITHMETIC_FACTORIAL, lexer, lexeme);
+        if (lexer->previousTokenType == TOKEN_NUMERIC || lexer->previousTokenType == TOKEN_IDENTIFIER)
+            return initSafeToken(TOKEN_ARITHMETIC_FACTORIAL, lexer, lexeme);
 
         // If it is followed by an assignment operator (`=`), it is not equal to operator (`!=`)
         // Note that the arithmetic factorial operator has higher precedence than it

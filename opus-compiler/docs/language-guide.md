@@ -117,7 +117,7 @@ order as the function’s parameter list. For example, pass a value that matches
 type to call the function `isEven()` displayed above.
 
 `````opus
-isEven(4)   // Returns true
+isEven(-4)   // Returns true
 `````
 
 ## List of Keywords
