@@ -7,7 +7,7 @@
 #include "lexer.h"
 
 int main() {
-    FILE *sourceCode = openOpusSourceCode("../tests/arithmetic.opus");
+    FILE *sourceCode = openOpusSourceCode("../tests/functions.opus");
     if (sourceCode) printf("Hello Opus!\n");
 
     Lexer *lexer = initLexer();

@@ -272,6 +272,44 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer, lexeme);
     }
 
+    // If an underscore stands alone, it cannot be any operator nor an identifier (but `__` is valid)
+    int nextCharacter = peekNextCharacter(sourceCode);
+    if (character == UNDERSCORE && !isalpha(nextCharacter) && nextCharacter != UNDERSCORE) {
+        return initUnsafeToken(ERROR_ORPHAN_UNDERSCORE, lexer, lexeme);
+    }
+
+    // The first character of an identifier or a keyword must be a letter or an underscore
+    if (isalpha(character) || character == UNDERSCORE) {
+        int position = (int) strlen(lexeme);
+
+        // Collect all valid characters for an identifier
+        while (isalnum(nextCharacter) || nextCharacter == UNDERSCORE) {
+            lexeme[position++]  = (char) consumeNextCharacter(lexer, sourceCode);
+            nextCharacter = peekNextCharacter(sourceCode);
+        }
+
+        lexeme[position] = '\0';
+        TokenType tokenType = TOKEN_IDENTIFIER;
+
+        // Compare the collected lexeme to known keywords
+        if (strcmp(lexeme, "var") == 0) { tokenType = TOKEN_KEYWORD_VAR; }
+        else if (strcmp(lexeme, "let") == 0) { tokenType = TOKEN_KEYWORD_LET; }
+        else if (strcmp(lexeme, "if") == 0) { tokenType = TOKEN_KEYWORD_IF; }
+        else if (strcmp(lexeme, "else") == 0) { tokenType = TOKEN_KEYWORD_ELSE; }
+        else if (strcmp(lexeme, "repeat") == 0) { tokenType = TOKEN_KEYWORD_REPEAT; }
+        else if (strcmp(lexeme, "until") == 0) { tokenType = TOKEN_KEYWORD_UNTIL; }
+        else if (strcmp(lexeme, "for") == 0) { tokenType = TOKEN_KEYWORD_FOR; }
+        else if (strcmp(lexeme, "in") == 0) { tokenType = TOKEN_KEYWORD_IN; }
+        else if (strcmp(lexeme, "return") == 0) { tokenType = TOKEN_KEYWORD_RETURN; }
+        else if (strcmp(lexeme, "class") == 0) { tokenType = TOKEN_KEYWORD_CLASS; }
+        else if (strcmp(lexeme, "struct") == 0) { tokenType = TOKEN_KEYWORD_STRUCT; }
+        else if (strcmp(lexeme, "func") == 0) { tokenType = TOKEN_KEYWORD_FUNC; }
+        else if (strcmp(lexeme, "true") == 0) { tokenType = TOKEN_KEYWORD_TRUE; }
+        else if (strcmp(lexeme, "false") == 0) { tokenType = TOKEN_KEYWORD_FALSE; }
+
+        return initSafeToken(tokenType, lexer, lexeme);
+    }
+
     // If unable to recognize the token
     return initUnsafeToken(ERROR_UNRECOGNIZABLE, lexer, lexeme);
 }
@@ -512,12 +550,29 @@ void displayToken(Token token) {
         case TOKEN_LESS_OR_EQUAL_TO_OPERATOR: printf("LessOrEqualToOperator"); break;
         case TOKEN_GREATER_THAN_OPERATOR: printf("GreaterThanOperator"); break;
         case TOKEN_GREATER_OR_EQUAL_TO_OPERATOR: printf("GreaterOrEqualOperator"); break;
+        case TOKEN_IDENTIFIER:  printf("Identifier"); break;
+        case TOKEN_KEYWORD_VAR:
+        case TOKEN_KEYWORD_LET:
+        case TOKEN_KEYWORD_IF:
+        case TOKEN_KEYWORD_ELSE:
+        case TOKEN_KEYWORD_REPEAT:
+        case TOKEN_KEYWORD_UNTIL:
+        case TOKEN_KEYWORD_FOR:
+        case TOKEN_KEYWORD_IN:
+        case TOKEN_KEYWORD_RETURN:
+        case TOKEN_KEYWORD_CLASS:
+        case TOKEN_KEYWORD_STRUCT:
+        case TOKEN_KEYWORD_FUNC:
+        case TOKEN_KEYWORD_TRUE:
+        case TOKEN_KEYWORD_FALSE: printf("Keyword"); break;
         default:;
     }
 
     switch (token.tokenError) {
         case ERROR_MALFORMED_NUMERIC: printf("MalformedNumeric"); break;
         case ERROR_UNDEFINED_OPERATOR: printf("UndefinedOperator"); break;
+        case ERROR_ORPHAN_UNDERSCORE: printf("OrphanUnderscore"); break;
+        case ERROR_UNRECOGNIZABLE: printf("Unrecognizable"); break;
         default:;
     }
 

@@ -24,6 +24,7 @@
 #define COMMA ','
 #define PERIOD '.'
 #define COLON ':'
+#define UNDERSCORE '_'
 #define OPENING_BRACKET '('
 #define CLOSING_BRACKET ')'
 #define OPENING_CURLY_BRACKET '{'
@@ -64,7 +65,22 @@ typedef enum {
     TOKEN_LESS_THAN_OPERATOR,             // Less than operator "<"
     TOKEN_LESS_OR_EQUAL_TO_OPERATOR,      // Less or equal to operator "<="
     TOKEN_GREATER_THAN_OPERATOR,          // Greater than operator ">"
-    TOKEN_GREATER_OR_EQUAL_TO_OPERATOR,   // greater or equal to operator ">="
+    TOKEN_GREATER_OR_EQUAL_TO_OPERATOR,   // Greater or equal to operator ">="
+    TOKEN_IDENTIFIER,                     // A valid identifier
+    TOKEN_KEYWORD_VAR,                    // Declares a mutable variable
+    TOKEN_KEYWORD_LET,                    // Declares an immutable constant
+    TOKEN_KEYWORD_IF,                     // Begins a conditional statement
+    TOKEN_KEYWORD_ELSE,                   // Defines an alternate execution block for `if`
+    TOKEN_KEYWORD_REPEAT,                 // Starts a loop that continues until a condition is met
+    TOKEN_KEYWORD_UNTIL,                  // Specifies the stopping condition for a loop
+    TOKEN_KEYWORD_FOR,                    // Initiates a loop over a sequence or range
+    TOKEN_KEYWORD_IN,                     // Used in `for` loops to define iteration over a range
+    TOKEN_KEYWORD_RETURN,                 // Exits from a function and optionally returns a value
+    TOKEN_KEYWORD_CLASS,                  // (Experimental) Defines a reference type
+    TOKEN_KEYWORD_STRUCT,                 // (Experimental) Defines a value type
+    TOKEN_KEYWORD_FUNC,                   // Declares a function.
+    TOKEN_KEYWORD_TRUE,                   // Boolean literal representing logical `true`
+    TOKEN_KEYWORD_FALSE,                  // Boolean literal representing logical `false`
 } TokenType;
 
 /// Error types for lexical analysis
@@ -74,6 +90,7 @@ typedef enum {
     ERROR_MALFORMED_NUMERIC,    // A number was malformed or invalid
     ERROR_UNDEFINED_OPERATOR,   // An invalid or unrecognized operator
     ERROR_OVERFLOW,             // Too long lexeme causes a buffer overflow
+    ERROR_ORPHAN_UNDERSCORE,    // Underscore stands alone (invalid for an identifier)
 } TokenError;
 
 /// The location of a token in the source code.
