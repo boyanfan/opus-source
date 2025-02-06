@@ -5,3 +5,7 @@ if (temperature < 0) {
 } else {
 	print("It is not that cold outside, it's time to go!")
 }
+
+func isEven(number: Int) -> Bool {
+    return number % 2 == 0
+}

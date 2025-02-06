@@ -4,11 +4,18 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "lexer.h"
 
-int main() {
-    FILE *sourceCode = openOpusSourceCode("../tests/functions.opus");
-    if (sourceCode) printf("Hello Opus!\n");
+int main(int argc, char *argv[]) {
+    // Ensure the user provides a file as an argument to compile
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <source_file.opus>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    FILE *sourceCode = openOpusSourceCode(argv[1]);
+    printf("Compiling %s...\n", argv[1]);
 
     Lexer *lexer = initLexer();
     Token *token = getNextToken(lexer, sourceCode);
@@ -18,5 +25,6 @@ int main() {
         token = getNextToken(lexer, sourceCode);
     }
 
-    return 0;
+    fclose(sourceCode);
+    return EXIT_SUCCESS;
 }
