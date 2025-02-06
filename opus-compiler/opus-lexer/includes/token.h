@@ -32,6 +32,7 @@
 #define OPENING_SQUARE_BRACKET '['
 #define CLOSING_SQUARE_BRACKET ']'
 #define EXCLAMATION_MARK '!'
+#define DOUBLE_QUOTE '"'
 #define ARITHMETIC_OPERATORS "+-*/%!="
 #define COMPARISON_OPERATORS "<>=!"
 #define CLOSING_CLOSURES "])}"
@@ -81,16 +82,18 @@ typedef enum {
     TOKEN_KEYWORD_FUNC,                   // Declares a function.
     TOKEN_KEYWORD_TRUE,                   // Boolean literal representing logical `true`
     TOKEN_KEYWORD_FALSE,                  // Boolean literal representing logical `false`
+    TOKEN_STRING_LITERAL,                 // A string literal wrapped by quotes
 } TokenType;
 
 /// Error types for lexical analysis
 typedef enum {
-    ERROR_TOKEN_NONE,           // No error occurred
-    ERROR_UNRECOGNIZABLE,       // An invalid or unrecognized character was encountered
-    ERROR_MALFORMED_NUMERIC,    // A number was malformed or invalid
-    ERROR_UNDEFINED_OPERATOR,   // An invalid or unrecognized operator
-    ERROR_OVERFLOW,             // Too long lexeme causes a buffer overflow
-    ERROR_ORPHAN_UNDERSCORE,    // Underscore stands alone (invalid for an identifier)
+    ERROR_TOKEN_NONE,            // No error occurred
+    ERROR_UNRECOGNIZABLE,        // An invalid or unrecognized character was encountered
+    ERROR_MALFORMED_NUMERIC,     // A number was malformed or invalid
+    ERROR_UNDEFINED_OPERATOR,    // An invalid or unrecognized operator
+    ERROR_OVERFLOW,              // Too long lexeme causes a buffer overflow
+    ERROR_ORPHAN_UNDERSCORE,     // Underscore stands alone (invalid for an identifier)
+    ERROR_UNTERMINATED_STRING,   // Missing closing double quote
 } TokenError;
 
 /// The location of a token in the source code.

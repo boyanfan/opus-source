@@ -272,6 +272,27 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer, lexeme);
     }
 
+    // If the lexer has reached a double quote for a string literal
+    if (character == DOUBLE_QUOTE) {
+        // Skip the opening quote to lex the content of a string literal
+        character = consumeNextCharacter(lexer, sourceCode);
+        int position = 0;
+
+        while (character != DOUBLE_QUOTE && character != '\0' && character != EOF && position < LEXEME_LENGTH) {
+            // Check for the escape character
+            if (character == '\\') lexeme[position++] = '\\';
+            else lexeme[position++] = (char) character;
+
+            character = consumeNextCharacter(lexer, sourceCode);
+        }
+
+        // If a string literal does not be terminated by a closing quote
+        if (character == EOF) return initUnsafeToken(ERROR_UNTERMINATED_STRING, lexer, lexeme);
+
+        lexeme[position] = '\0';
+        return initSafeToken(TOKEN_STRING_LITERAL, lexer, lexeme);
+    }
+
     // If an underscore stands alone, it cannot be any operator nor an identifier (but `__` is valid)
     int nextCharacter = peekNextCharacter(sourceCode);
     if (character == UNDERSCORE && !isalpha(nextCharacter) && nextCharacter != UNDERSCORE) {
@@ -482,7 +503,10 @@ Token *initUnsafeToken(TokenError tokenError, Lexer *lexer, const char *lexeme) 
 
     // Get the beginning location of the current token
     token->location.line = lexer->location.line;
-    token->location.column = lexer->location.column - (int) lexemeLength + 1;
+
+    int column = lexer->location.column - (int) lexemeLength + 1;
+    if (tokenError == ERROR_UNTERMINATED_STRING) column = lexer->location.column - 1;
+    token->location.column = column;
 
     lexer->previousTokenType = TOKEN_ERROR;
     return token;
@@ -565,6 +589,7 @@ void displayToken(Token token) {
         case TOKEN_KEYWORD_FUNC:
         case TOKEN_KEYWORD_TRUE:
         case TOKEN_KEYWORD_FALSE: printf("Keyword"); break;
+        case TOKEN_STRING_LITERAL: printf("StringLiteral"); break;
         default:;
     }
 
@@ -573,6 +598,7 @@ void displayToken(Token token) {
         case ERROR_UNDEFINED_OPERATOR: printf("UndefinedOperator"); break;
         case ERROR_ORPHAN_UNDERSCORE: printf("OrphanUnderscore"); break;
         case ERROR_UNRECOGNIZABLE: printf("Unrecognizable"); break;
+        case ERROR_UNTERMINATED_STRING: printf("UnterminatedString"); break;
         default:;
     }
 
