@@ -27,7 +27,18 @@ git clone https://github.com/boyanfan/opus-source.git
 cd opus-source/opus-compiler
 ```
 If you choose to download and uncompress the submission, make sure the current 
-working directory is `../opus-source/opus-compiler` by using `pwd` to check.
+working directory is `../opus-source/opus-compiler` by using `pwd` to check. Then use
+the following commands to build.
+```shell
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
+Once built, you can run Opus to compile a specific Opus source file (`.opus` files). 
+For example, the following command compiles `correct.opus` from `test` folder.
+```shell
+./Opus ../tests/correct.opus
+```
 
 ## Next Step
 In Phase 2 we extend the existing lexer by adding a parser that constructs a syntax tree,

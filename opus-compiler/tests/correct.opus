@@ -2,15 +2,24 @@
     // This (starts with '//') is a comment in Opus and should be ignored by the compiler
     // Whitespaces (like the spaces before this line) should also be ignored
 
-    12 - 34 * 56
+func arithmetic(argument: Int) -> Bool {
+    // Floating number and negative numbers
+    var collection: Array = [12.345, -30, -3.1415, 6!]
+
+    // Identifier with underscores
+    let __condition__ = !(argument == 0)
+
+    if (__condition__) {
+        print("It is too cold outside! \nI gonna skip today's lecture!\n")
+    }
+
+    return 12! - 34 * 56 != 0
+}
 
 {
     78 * 90 + ( 12345
     // This should be valid since newline characters in a closure (between [...], (...) and <...>) are whitespaces
     % 45678)
 }
-
-// Floating number and negative numbers
-[12.345, -30, -3.1415, 6!]
 
 // Test case for the comment at the end of line

@@ -1,0 +1,16 @@
+// This line contains a malformed number
+let number: Int = -43.554f
+
+// This line contains two unrecognizable operators
+if (number++ === 0)
+
+// This line contains a single underscore as an identifier (which as invalid)
+let _ : Any = ""
+
+// This line contains an unclosed bracket
+(
+(
+)
+
+// This line contains an unterminated quote
+let message: String = "

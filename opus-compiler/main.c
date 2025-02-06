@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // Safely open given Opus source code by using function openOpusSourceCode()
     FILE *sourceCode = openOpusSourceCode(argv[1]);
     printf("Compiling %s...\n", argv[1]);
 
@@ -25,6 +26,7 @@ int main(int argc, char *argv[]) {
         token = getNextToken(lexer, sourceCode);
     }
 
+    // Close file after compiling the source code
     fclose(sourceCode);
     return EXIT_SUCCESS;
 }
