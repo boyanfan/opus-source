@@ -33,6 +33,8 @@
 #define CLOSING_SQUARE_BRACKET ']'
 #define EXCLAMATION_MARK '!'
 #define DOUBLE_QUOTE '"'
+#define LOGICAL_AND_OPERATOR '&'
+#define LOGICAL_OR_OPERATOR '|'
 #define ARITHMETIC_OPERATORS "+-*/%!="
 #define COMPARISON_OPERATORS "<>=!"
 #define CLOSING_CLOSURES "])}"
@@ -83,6 +85,8 @@ typedef enum {
     TOKEN_KEYWORD_TRUE,                   // Boolean literal representing logical `true`
     TOKEN_KEYWORD_FALSE,                  // Boolean literal representing logical `false`
     TOKEN_STRING_LITERAL,                 // A string literal wrapped by quotes
+    TOKEN_LOGICAL_AND_OPERATOR,           // Logical and operator "&&"
+    TOKEN_LOGICAL_OR_OPERATOR,            // Logical or operator "||"
 } TokenType;
 
 /// Error types for lexical analysis

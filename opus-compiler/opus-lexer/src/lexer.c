@@ -272,6 +272,44 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode) {
         return initSafeToken(TOKEN_CLOSING_SQUARE_BRACKET, lexer, lexeme);
     }
 
+    // If the lexer has reached a logical and operator
+    if (character == LOGICAL_AND_OPERATOR) {
+        // First try to match the logical and operator (`&&`)
+        if (peekNextCharacter(sourceCode) == LOGICAL_AND_OPERATOR) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `&&` should form and be recognized as an undefined operator
+            int nextCharacter = peekNextCharacter(sourceCode);
+            if (strchr(NATIVE_OPERATORS, nextCharacter) && nextCharacter != EXCLAMATION_MARK) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+            }
+
+            return initSafeToken(TOKEN_LOGICAL_AND_OPERATOR, lexer, lexeme);
+        }
+    }
+
+    // If the lexer has reached a logical or operator
+    if (character == LOGICAL_OR_OPERATOR) {
+        // First try to match the logical and operator (`||`)
+        if (peekNextCharacter(sourceCode) == LOGICAL_OR_OPERATOR) {
+            int position = (int) strlen(lexeme);
+            lexeme[position++] = (char) consumeNextCharacter(lexer, sourceCode);
+            lexeme[position] = '\0';
+
+            // Any additional symbol followed by operator `&&` should form and be recognized as an undefined operator
+            int nextCharacter = peekNextCharacter(sourceCode);
+            if (strchr(NATIVE_OPERATORS, nextCharacter) && nextCharacter != EXCLAMATION_MARK) {
+                skipCurrenToken(lexer, sourceCode, lexeme, NATIVE_OPERATORS);
+                return initUnsafeToken(ERROR_UNDEFINED_OPERATOR, lexer, lexeme);
+            }
+
+            return initSafeToken(TOKEN_LOGICAL_OR_OPERATOR, lexer, lexeme);
+        }
+    }
+
     // If the lexer has reached a double quote for a string literal
     if (character == DOUBLE_QUOTE) {
         // Skip the opening quote to lex the content of a string literal
@@ -590,6 +628,8 @@ void displayToken(Token token) {
         case TOKEN_KEYWORD_TRUE:
         case TOKEN_KEYWORD_FALSE: printf("Keyword"); break;
         case TOKEN_STRING_LITERAL: printf("StringLiteral"); break;
+        case TOKEN_LOGICAL_AND_OPERATOR: printf("LogicalAndOperator"); break;
+        case TOKEN_LOGICAL_OR_OPERATOR: printf("LogicalOrOperator"); break;
         default:;
     }
 

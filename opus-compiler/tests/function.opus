@@ -2,4 +2,4 @@ func isEven(number: Int) -> Bool {
 	return number % 2 == 0
 }
 
-isEven(4)   // Returns true
+isEven(-4)   // Returns true
