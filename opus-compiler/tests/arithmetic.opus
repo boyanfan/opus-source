@@ -11,4 +11,4 @@
 [==, !=, >, <, >=, <=, &&, ||]
 
 // Whitespace between operators and operand are not required, like, "(12!) != 3 && !true" can be written as
-12!!=3 &&!true
+12!!=3&&!true

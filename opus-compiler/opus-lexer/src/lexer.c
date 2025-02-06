@@ -396,13 +396,15 @@ Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
     // After parsing all digits, we check the next character since a numeric literal must end with
     // 1. a whitespace;
     // 2. a delimiter;
-    // 3. any arithmetic operator (+-*/%!=);
+    // 3. any arithmetic operators (+-*/%!=);
     // 4. any comparison operators (<>=!);
+    // 5. any logical operators (&|)
     // 5. any closing closure ("}", ")", or "]");
     // 6. A comma (",");
     // 7. End of the source code (EOF)
     if (isWhitespace(character) || character == '\n' || strchr(ARITHMETIC_OPERATORS, character) || character == EOF ||
-        strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURES, character) || character == COMMA) {
+        strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURES, character) || character == COMMA ||
+        strchr(LOGICAL_OPERATORS, character)) {
         lexeme[decimal] = '\0';
         return initSafeToken(TOKEN_NUMERIC, lexer, lexeme);
     }
@@ -410,7 +412,7 @@ Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme) {
     // Collect all invalid characters
     while (!(isWhitespace(character) || character == '\n' || strchr(ARITHMETIC_OPERATORS, character) ||
            strchr(COMPARISON_OPERATORS, character) || strchr(CLOSING_CLOSURES, character) || character == COMMA ||
-           character == EOF) && decimal < LEXEME_LENGTH) {
+           character == EOF || strchr(LOGICAL_OPERATORS, character)) && decimal < LEXEME_LENGTH) {
         lexeme[decimal++] = (char) consumeNextCharacter(lexer, sourceCode);
         character = peekNextCharacter(sourceCode);
     }

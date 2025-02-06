@@ -37,6 +37,7 @@
 #define LOGICAL_OR_OPERATOR '|'
 #define ARITHMETIC_OPERATORS "+-*/%!="
 #define COMPARISON_OPERATORS "<>=!"
+#define LOGICAL_OPERATORS "&|"
 #define CLOSING_CLOSURES "])}"
 #define NATIVE_OPERATORS "+-*/%!@#$&?~=.:>"
 
