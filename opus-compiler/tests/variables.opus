@@ -1,0 +1,7 @@
+// Use keyword `var` to declare a variable,
+// followed by its name and its type, then use the operator `=` to assign a value.
+var quizGrade: Int = 100
+
+// Use keyword `let` to declare a constant,
+// so the Opus compiler guarantees that its value will never be changed.
+let studentName: String = "Boyan Fan"

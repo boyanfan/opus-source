@@ -1,0 +1,8 @@
+// All the comment will be ignored by Opus Compiler
+
+1 + 2    // Addition,       equals to 3
+1 - 2    // Subtraction,    equals to 1
+1 * 2    // Multiplication, equals to 2
+1 / 2    // Division,       equals to 0.5
+-5 % 2   // Modulo,         equals -1
+3!       // Factorial,      equals 6

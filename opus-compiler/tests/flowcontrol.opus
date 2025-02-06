@@ -1,0 +1,19 @@
+let temperature: Float = -12.5
+
+if (temperature < 0) {
+	print("It is so cold outside! I gonna skip this morning lecture!")
+} else {
+	print("It is not that cold outside, it's time to go!")
+}
+
+// We want to calculate 3!, the factorial of 3
+var result: Int = 3
+for number in 1...3 {
+	result = result * number   // Looping over number equals to 1 and 2
+}
+
+// We want to find 13 % 3, the remainder of 13 / 3
+var dividend: Int = 13
+repeat {
+	dividend = dividend - 3
+} until (dividend < 0)   // After looping, the remainder = dividend + 3
