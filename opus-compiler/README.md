@@ -61,9 +61,6 @@ If errors occur during `cmake --build .`, try removing the `build` directory
 configuration process. For missing dependencies, ensure all necessary libraries are 
 installed. If using **Make**, verify that it is correctly installed (`make --version`).
 
-If issues persist, examine CMake's output logs for detailed error messages, which often 
-indicate missing files, incorrect paths, or compiler-related issues.
-
 ---
 
 ## Next Step
