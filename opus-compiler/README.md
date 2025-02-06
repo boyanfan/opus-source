@@ -47,6 +47,25 @@ and use the compiler you just built to compile it using the following command!
 ./Opus <your-opes-source-code>
 ```
 
+### **Troubleshooting Build Issues**
+
+If you encounter issues while building *Opus*, first ensure that all **prerequisites** are 
+correctly installed. Run `cmake --version` to confirm that **CMake 3.20+** is available 
+and `gcc --version` or `clang --version` to check for a valid **C compiler**. If CMake 
+fails to locate a compiler, ensure your system's environment variables 
+(e.g., `PATH` on Linux/macOS or system variables on Windows) include the compiler's 
+installation directory.
+
+If errors occur during `cmake --build .`, try removing the `build` directory 
+(`rm -rf build` on Linux/macOS or `rmdir /s /q build` on Windows), then re-run the CMake 
+configuration process. For missing dependencies, ensure all necessary libraries are 
+installed. If using **Make**, verify that it is correctly installed (`make --version`).
+
+If issues persist, examine CMake's output logs for detailed error messages, which often 
+indicate missing files, incorrect paths, or compiler-related issues.
+
+---
+
 ## Next Step
 In Phase 2 we extend the existing lexer by adding a parser that constructs a syntax tree,
 based on a manually defined Context-Free Grammars (CFGs). The parser will validate 
