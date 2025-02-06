@@ -142,14 +142,22 @@ as an example displayed below.
 
 If any error occurs, the Opus lexer display a `<ERROR>` with its error type,
 its lexeme and the location where the error occurs (in the format of `line:colomn`),
-as an example displayed below. Then the lexer keep lexing source codes until
-the end of the file has been reached.
+as an example displayed below.
 
 ```text
 <ERROR:UndefinedOperator, Lexeme:"==="> at location 16:2
 ```
 
-## Design Considerations
+### Error Recovery
+Once an error occurs, the Opus lexer reports it and keeps lexing source codes until
+the end of the file has been reached. The lexer will call `skipCurrenToken()` to collect 
+all the remaining characters of the current tokens.
+
+```C
+int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence);
+```
+
+### Design Considerations
 When designing the Opus programming language, one of the key decisions was
 whether to use a keyword-based primitive type system similar to C (e.g., int, float), 
 or to adopt a type identifier-based system like Swift (e.g., Int, Float). We ultimately 
