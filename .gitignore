@@ -27,3 +27,7 @@ cmake-build-*/
 
 .vscode/
 *.code-workspace
+
+# Ignore compile_commands.json
+compile_commands.json
+.cache
