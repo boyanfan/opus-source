@@ -115,4 +115,4 @@ typedef struct {
     char lexeme[LEXEME_LENGTH];   // The actual content (lexeme) of the token.
 } Token;
 
-#endif /* TOKEN_H */
+#endif

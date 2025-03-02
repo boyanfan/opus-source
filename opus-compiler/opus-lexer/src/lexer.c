@@ -516,6 +516,7 @@ Lexer *initLexer() {
 
 Token *initSafeToken(TokenType tokenType, Lexer *lexer, const char *lexeme) {
     Token *token = (Token*) malloc(sizeof(Token));
+    if (!token) return token;
 
     token->tokenError = ERROR_TOKEN_NONE;
     token->tokenType = tokenType;
@@ -534,6 +535,7 @@ Token *initSafeToken(TokenType tokenType, Lexer *lexer, const char *lexeme) {
 
 Token *initUnsafeToken(TokenError tokenError, Lexer *lexer, const char *lexeme) {
     Token *token = (Token*) malloc(sizeof(Token));
+    if (!token) return token;
 
     token->tokenType = TOKEN_ERROR;
     token->tokenError = tokenError;

@@ -37,8 +37,8 @@ typedef struct {
 
 /// Reads the next token from the source code.
 ///
-/// \param lexer A pointer to the Lexer instance to update.
-/// \param sourceCode A pointer to the FILE object containing the source code.
+/// @param lexer A pointer to the Lexer instance to update.
+/// @param sourceCode A pointer to the FILE object containing the source code.
 /// @return A pointer to a Token representing the next token in the source code.
 ///
 Token *getNextToken(Lexer *lexer, FILE* sourceCode);
@@ -47,8 +47,8 @@ Token *getNextToken(Lexer *lexer, FILE* sourceCode);
 ///
 /// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
 /// @param sourceCode A pointer to the source file to be read.
-/// \param lexeme A character buffer where the parsed numeric token will be stored.
-/// \return A pointer to a Token representing the numeric token in the source code.
+/// @param lexeme A character buffer where the parsed numeric token will be stored.
+/// @return A pointer to a Token representing the numeric token in the source code.
 ///
 Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme);
 
@@ -56,25 +56,25 @@ Token *parseNumeric(Lexer *lexer, FILE *sourceCode, char *lexeme);
 ///
 /// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
 /// @param sourceCode A pointer to the source file to be read.
-/// \param lexeme A character buffer where the parsed numeric token will be stored.
-/// \param skippedSequence A string containing characters that should be skipped.
-/// \return The next character in the source file after skipping the invalid sequence.
+/// @param lexeme A character buffer where the parsed numeric token will be stored.
+/// @param skippedSequence A string containing characters that should be skipped.
+/// @return The next character in the source file after skipping the invalid sequence.
 ///
 int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedSequence);
 
 /// Updates the location of the lexer to the start of the next token and return the current pointing character.
 ///
-/// \param lexer A pointer to the Lexer instance to update.
-/// \param sourceCode A pointer to the FILE object containing the source code.
-/// \return The current character in the input stream without consuming it (may return 'EOF').
+/// @param lexer A pointer to the Lexer instance to update.
+/// @param sourceCode A pointer to the FILE object containing the source code.
+/// @return The current character in the input stream without consuming it (may return 'EOF').
 ///
 int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode);
 
 /// Updates the location of the lexer to the start of the next line and return the current pointing character.
 ///
-/// \param lexer A pointer to the Lexer instance to update.
-/// \param sourceCode A pointer to the FILE object containing the source code.
-/// \return The current character in the input stream without consuming it (may return 'EOF').
+/// @param lexer A pointer to the Lexer instance to update.
+/// @param sourceCode A pointer to the FILE object containing the source code.
+/// @return The current character in the input stream without consuming it (may return 'EOF').
 ///
 int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode);
 
@@ -88,8 +88,8 @@ int consumeNextCharacter(Lexer *lexer, FILE *sourceCode);
 
 /// Peeks at the next character in the input stream without consuming it (by advancing the file pointer).
 ///
-/// \param sourceCode A pointer to the FILE object representing the input stream.
-/// \return The next character in the input stream without consuming it (may return 'EOF').
+/// @param sourceCode A pointer to the FILE object representing the input stream.
+/// @return The next character in the input stream without consuming it (may return 'EOF').
 ///
 int peekNextCharacter(FILE *sourceCode);
 
@@ -109,7 +109,7 @@ int isWhitespace(int character);
 /// Check if the lexer is currently in a delimiter-free closure (that is between (...) and [...])
 ///
 /// @param lexer A pointer to the Lexer structure, which maintains the current position in the source file.
-/// \return 1 (ture) if currently in a closure (where newline would not be a delimiter), 0 (false) otherwise.
+/// @return 1 (ture) if currently in a closure (where newline would not be a delimiter), 0 (false) otherwise.
 ///
 int isInClosure(Lexer *lexer);
 
@@ -164,4 +164,4 @@ int isOpusSourceCode(const char *filename);
 ///
 void displayToken(Token token);
 
-#endif /* LEXER_H */
+#endif
