@@ -24,6 +24,12 @@ ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
             currentNode->right = initASTNode(AST_PROGRAM, NULL);
             currentNode = currentNode->right;
         }
+
+        // Must explicitly handle the case that there is no delimiter at the end of the file 
+        // Since Opus uses newline character as a delimiter and in some cases, there might be no 
+        // Newline character at the end of the file, but only a EOF, so in this case,
+        // Treat the EOF as a delimiter to complete the AST structure (avoid NULL right node)
+        else currentNode->right = initASTNode(AST_PROGRAM, NULL);
     }
 
     return root;
