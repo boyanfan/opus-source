@@ -13,16 +13,16 @@
 
 /// AST Node Types for representing different syntactic constructs in the language.
 typedef enum {
-    AST_PROGRAM,                 /// Root node of the entire program.
-    AST_VARIABLE_DECLARATION,    /// Variable declaration node (e.g. "var number: Int").
-    AST_ASSIGNMENT,              /// Assignment statement node (e.g. "number = 5").
-    AST_ARITHMETIC_EXPRESSION,   /// Arithmetic expression node (supports +-*/% and factorial '!').
-    AST_BOOLEAN_EXPRESSION,      /// Boolean expression node (e.g. "condition1 && condition2").
-    AST_CONDITIONAL,             /// Conditional statement node (if-else).
-    AST_FUNCTION_CALL,           /// Function call node (e.g. "range(1, 3)").
-    AST_FORIN_LOOP,              /// For loop node (e.g. "for number in range(1, 3) { body }").
-    AST_IO,                      /// Input/Output statement node (e.g. "print(...)", "read(from: Int.self)").
-    AST_REPEAT_UNTIL,            /// Repeat-until loop node (e.g. "repeat { body } until (condition)").
+    AST_PROGRAM,                  /// Root node of the entire program.
+    AST_VARIABLE_DECLARATION,     /// Variable declaration node (e.g. "var number: Int").
+    AST_ASSIGNMENT_STATEMENT,     /// Assignment statement node (e.g. "number = 5").
+    AST_ARITHMETIC_EXPRESSION,    /// Arithmetic expression node (supports +-*/% and factorial '!').
+    AST_BOOLEAN_EXPRESSION,       /// Boolean expression node (e.g. "condition1 && condition2").
+    AST_CONDITIONAL_STATEMENT,    /// Conditional statement node (if-else).
+    AST_FUNCTION_CALL,            /// Function call node (e.g. "range(1, 3)").
+    AST_FORIN_LOOP_STATEMENT,     /// For loop node (e.g. "for number in range(1, 3) { body }").
+    AST_IO_STATEMENT,             /// Input/Output statement node (e.g. "print(...)", "read(from: Int.self)").
+    AST_REPEAT_UNTIL_STATEMENT,   /// Repeat-until loop node (e.g. "repeat { body } until (condition)").
 } ASTNodeType;
 
 /// AST Node structure for the abstract syntax tree.

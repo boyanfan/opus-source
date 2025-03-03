@@ -6,6 +6,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ast.h"
+#include "parser.h"
+
+Token *advanceParser(Parser *parser, FILE *sourceCode) { return getNextToken(parser->lexer, sourceCode); } 
+
+Parser *initParser() {
+    // Allocate memory for a Parser instance and return NULL if memory allocation failed 
+    Parser *parser = (Parser*) malloc(sizeof(Parser));
+    if (!parser) return NULL;
+
+    // Allocate memory for a Lexer instance and return NULL if memory allocation failed 
+    Lexer *lexer = initLexer();
+    if (!lexer) return NULL;
+
+    parser->parseError = PARSE_ERROR_NONE;
+    parser->lexer = lexer;
+    parser->currentToken = NULL;
+
+    return parser;
+}
 
 ASTNode* initASTNode(ASTNodeType nodeType, Token token) {
     // Try to allocate memory for an AST node, if memory allocation fails, return an empty node
@@ -38,19 +57,19 @@ void displayAST(ASTNode* node, int level) {
     for (int i = 0; i < level - 1; i++) printf("    ");
     if (level > 0) printf("├── ");
 
-    // Dsiplay the node
+    // Display the node
     switch (node->nodeType) {
-        case AST_PROGRAM: printf("AST_PROGRAM\n"); break;
-        case AST_VARIABLE_DECLARATION: printf("AST_VARIABLE_DECLARATION (%s)\n", node->token.lexeme); break;
-        case AST_ASSIGNMENT: printf("AST_ASSIGNMENT (%s)\n", node->token.lexeme); break;
-        case AST_ARITHMETIC_EXPRESSION: printf("AST_ARITHMETIC_EXPRESSION (%s)\n", node->token.lexeme); break;
-        case AST_BOOLEAN_EXPRESSION: printf("AST_BOOLEAN_EXPRESSION (%s)\n", node->token.lexeme); break;
-        case AST_CONDITIONAL: printf("AST_CONDITIONAL (if)\n"); break;
-        case AST_FUNCTION_CALL: printf("AST_FUNCTION_CALL (%s)\n", node->token.lexeme); break;
-        case AST_FORIN_LOOP: printf("AST_FORIN_LOOP (for %s)\n", node->token.lexeme); break;
-        case AST_IO: printf("AST_IO (%s)\n", node->token.lexeme); break;
-        case AST_REPEAT_UNTIL: printf("AST_REPEAT_UNTIL\n"); break;
-        default: printf("UNKNOWN NODE\n"); break;
+        case AST_PROGRAM:                  printf("AST_PROGRAM\n"); break;
+        case AST_VARIABLE_DECLARATION:     printf("AST_VARIABLE_DECLARATION (%s)\n", node->token.lexeme); break;
+        case AST_ASSIGNMENT_STATEMENT:     printf("AST_ASSIGNMENT (%s)\n", node->token.lexeme); break;
+        case AST_ARITHMETIC_EXPRESSION:    printf("AST_ARITHMETIC_EXPRESSION (%s)\n", node->token.lexeme); break;
+        case AST_BOOLEAN_EXPRESSION:       printf("AST_BOOLEAN_EXPRESSION (%s)\n", node->token.lexeme); break;
+        case AST_CONDITIONAL_STATEMENT:    printf("AST_CONDITIONAL (if)\n"); break;
+        case AST_FUNCTION_CALL:            printf("AST_FUNCTION_CALL (%s)\n", node->token.lexeme); break;
+        case AST_FORIN_LOOP_STATEMENT:     printf("AST_FORIN_LOOP (for %s)\n", node->token.lexeme); break;
+        case AST_IO_STATEMENT:             printf("AST_IO (%s)\n", node->token.lexeme); break;
+        case AST_REPEAT_UNTIL_STATEMENT:   printf("AST_REPEAT_UNTIL\n"); break;
+        default:                           printf("UNKNOWN NODE\n"); break;
     }
 
     if (node->left) displayAST(node->left, level + 1);

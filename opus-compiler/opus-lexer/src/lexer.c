@@ -498,7 +498,7 @@ int isInClosure(Lexer *lexer) {
 }
 
 Lexer *initLexer() {
-    // Allocate memory for the Lexer instance and return NULL if memory allocation failed
+    // Allocate memory for a Lexer instance and return NULL if memory allocation failed
     Lexer *lexer = (Lexer*) malloc(sizeof(Lexer));
     if (!lexer) return NULL;
 
