@@ -42,11 +42,13 @@ typedef struct {
 ///     Program → Statement Delimiter | Program
 ///
 ///     AST_PROGRAM
-///     └── AST_STATEMENT
+///     ├── AST_STATEMENT
+///     ╰── AST_PROGRAM
 ///         ├── AST_STATEMENT (Statement 1)
-///         ├── AST_STATEMENT (Statement 2)
-///         ├── ...
-///         └── AST_STATEMENT (Last Statement)
+///         ╰── AST_PROGRAM
+///             ...
+///             ├── AST_STATEMENT (Last Statement)
+///             ╰── AST_PROGRAM
 ///
 /// @param parser A pointer to the Parser instance, which maintains the token stream.
 /// @param sourceCode A file pointer to the source code (used for error reporting).

@@ -156,7 +156,7 @@ void displayAST(ASTNode* node, int level) {
     if (!node) return;
 
     // Print indentation with box-drawing characters for a better format
-    for (int i = 0; i < level - 1; i++) printf("    ");
+    for (int i = 0; i < level - 1; i++) printf("│   ");
     if (level > 0) printf("├── ");
 
     // Display the node
