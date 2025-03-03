@@ -1,0 +1,3 @@
+var number: Int
+let name: String
+var input: Any 

@@ -5,8 +5,104 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "ast.h"
 #include "parser.h"
+
+ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
+    ASTNode *root = initASTNode(AST_PROGRAM, NULL);
+    ASTNode *currentNode = root;
+
+    while (!matchTokenType(parser, TOKEN_EOF)) {
+        // Skip orphan delimiters like (delimiter delimiter...)
+        if (parser->currentToken->tokenType == TOKEN_DELIMITER) {
+            parser->currentToken = advanceParser(parser, sourceCode);
+            continue;
+        }
+
+        currentNode->left = parseStatement(parser, sourceCode);
+
+        if (!matchTokenType(parser, TOKEN_EOF)) {
+            currentNode->right = initASTNode(AST_PROGRAM, NULL);
+            currentNode = currentNode->right;
+        }
+    }
+
+    return root;
+}
+
+ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
+    // Try to parse declaration statement
+    if (matchTokenType(parser, TOKEN_KEYWORD_VAR) || matchTokenType(parser, TOKEN_KEYWORD_LET)) { 
+        return parseVariableDeclaration(parser, sourceCode);
+    }
+
+    // If unable to parse the statement
+    parser->parseError = PARSE_ERROR_UNRESOLVABLE;
+    reportParseError(parser);
+
+    exit(1);
+}
+
+ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
+    // Create a node for the variable declaration statement
+    ASTNode *root = (parser->currentToken->tokenType == TOKEN_KEYWORD_VAR)
+        ? initASTNode(AST_VARIABLE_DECLARATION, parser->currentToken)
+        : initASTNode(AST_CONSTANT_DECLARATION, parser->currentToken);
+    
+    // Consume the current keyword token 'var' or 'let'
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Then try to parse the identifier
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_IDENTIFIER;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Create a node for the identifier
+    ASTNode *identifierNode = initASTNode(AST_IDENTIFIER, parser->currentToken);
+
+    // Consume the current identifier token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match colon 
+    if (!matchTokenType(parser, TOKEN_COLON)) {
+        parser->parseError = PARSE_ERROR_MISSING_TYPE_ANNOTATION;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Consume the current colon token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the type identifier
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_TYPE_NAME;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Create a node for the type annotation
+    ASTNode *typeAnnotationNode = initASTNode(AST_TYPE_ANNOTATION, parser->currentToken);
+
+    // Create the AST for the variable declaration statement
+    root->left = identifierNode;
+    root->right = typeAnnotationNode;
+
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the delimiter
+    if (!matchTokenType(parser, TOKEN_DELIMITER)) {
+        parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
+        reportParseError(parser);
+        exit(1);
+    }
+    
+    // Comsume the current delimiter token
+    parser->currentToken = advanceParser(parser, sourceCode);
+    return root;
+}
+
+int matchTokenType(Parser *parser, TokenType type) { return parser->currentToken->tokenType == type; }
 
 Token *advanceParser(Parser *parser, FILE *sourceCode) { return getNextToken(parser->lexer, sourceCode); } 
 
@@ -26,7 +122,7 @@ Parser *initParser() {
     return parser;
 }
 
-ASTNode* initASTNode(ASTNodeType nodeType, Token token) {
+ASTNode* initASTNode(ASTNodeType nodeType, Token *token) {
     // Try to allocate memory for an AST node, if memory allocation fails, return an empty node
     ASTNode *node = (ASTNode*) malloc(sizeof(ASTNode));
     if (!node) return node;
@@ -59,19 +155,37 @@ void displayAST(ASTNode* node, int level) {
 
     // Display the node
     switch (node->nodeType) {
-        case AST_PROGRAM:                  printf("AST_PROGRAM\n"); break;
-        case AST_VARIABLE_DECLARATION:     printf("AST_VARIABLE_DECLARATION (%s)\n", node->token.lexeme); break;
-        case AST_ASSIGNMENT_STATEMENT:     printf("AST_ASSIGNMENT (%s)\n", node->token.lexeme); break;
-        case AST_ARITHMETIC_EXPRESSION:    printf("AST_ARITHMETIC_EXPRESSION (%s)\n", node->token.lexeme); break;
-        case AST_BOOLEAN_EXPRESSION:       printf("AST_BOOLEAN_EXPRESSION (%s)\n", node->token.lexeme); break;
-        case AST_CONDITIONAL_STATEMENT:    printf("AST_CONDITIONAL (if)\n"); break;
-        case AST_FUNCTION_CALL:            printf("AST_FUNCTION_CALL (%s)\n", node->token.lexeme); break;
-        case AST_FORIN_LOOP_STATEMENT:     printf("AST_FORIN_LOOP (for %s)\n", node->token.lexeme); break;
-        case AST_IO_STATEMENT:             printf("AST_IO (%s)\n", node->token.lexeme); break;
-        case AST_REPEAT_UNTIL_STATEMENT:   printf("AST_REPEAT_UNTIL\n"); break;
-        default:                           printf("UNKNOWN NODE\n"); break;
+        case AST_PROGRAM:                printf("AST_PROGRAM\n"); break;
+        case AST_VARIABLE_DECLARATION:   printf("AST_VARIABLE_DECLARATION (%s)\n", node->token->lexeme); break;
+        case AST_CONSTANT_DECLARATION:   printf("AST_CONSTANT_DECLARATION (%s)\n", node->token->lexeme); break;
+        case AST_IDENTIFIER:             printf("AST_IDENTIFIER (%s)\n", node->token->lexeme); break;
+        case AST_TYPE_ANNOTATION:        printf("AST_TYPE_ANNOTATION (%s)\n", node->token->lexeme); break;
+        case AST_ASSIGNMENT_STATEMENT:   printf("AST_ASSIGNMENT (%s)\n", node->token->lexeme); break;
+        default:                         printf("UNKNOWN NODE\n"); break;
     }
 
     if (node->left) displayAST(node->left, level + 1);
-    if (node->right) displayAST(node->right, level);
+    if (node->right) displayAST(node->right, level + 1);
 }
+
+void reportParseError(Parser *parser) {
+    Token *currentToken = parser->currentToken;
+    printf("Parsing Error at %d:%d\n", currentToken->location.line, currentToken->location.column);
+
+    // Return if there is no error to display
+    if (parser->parseError == PARSE_ERROR_NONE) return;
+
+    switch (parser->parseError) {
+        case PARSE_ERROR_MISSING_IDENTIFIER:
+            printf("[ERROR] Expecting an identifier for the variable after %s\n", currentToken->lexeme); break;
+        case PARSE_ERROR_MISSING_TYPE_ANNOTATION:
+            printf("[ERROR] Expecting \":\" after %s\n", currentToken->lexeme); break;
+        case PARSE_ERROR_MISSING_TYPE_NAME:
+            printf("[ERROR] Expecting a type name after %s\n", currentToken->lexeme); break;
+        case PARSE_ERROR_UNRESOLVABLE:
+            printf("[ERROR] Unresolvable token after %s\n", currentToken->lexeme); break;
+        default:
+            printf("[ERROR] Unable to generate diagnostic information...\n");
+    }
+}
+

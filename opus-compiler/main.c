@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lexer.h"
 #include "parser.h"
 
 int main(int argc, char *argv[]) {
@@ -21,8 +20,12 @@ int main(int argc, char *argv[]) {
 
     // Initialize the Parser and try to generate the AST for the provided sourceCode
     Parser *parser = initParser(); 
-    Token *firstToken = advanceParser(parser, sourceCode);
-    displayToken(*firstToken);
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to parse variable declaration
+    ASTNode *root = parseProgram(parser, sourceCode);
+    displayAST(root, 0);
+    freeAST(root);
 
     // Close the provided sourceCode after parsing
     fclose(sourceCode);
