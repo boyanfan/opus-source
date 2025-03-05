@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
-#include "lexer.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -61,6 +60,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Then try to parse the identifier
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
         parser->parseError = PARSE_ERROR_MISSING_IDENTIFIER;
+        parser->previousToken = root->token;
         reportParseError(parser);
         exit(1);
     }
@@ -74,6 +74,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Try to match colon 
     if (!matchTokenType(parser, TOKEN_COLON)) {
         parser->parseError = PARSE_ERROR_MISSING_TYPE_ANNOTATION;
+        parser->previousToken = identifierNode->token;
         reportParseError(parser);
         exit(1);
     }
@@ -84,6 +85,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Try to match the type identifier
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
         parser->parseError = PARSE_ERROR_MISSING_TYPE_NAME;
+        parser->previousToken = parser->currentToken;
         reportParseError(parser);
         exit(1);
     }
@@ -97,10 +99,10 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
 
     // Comsume the current type annotation token
     parser->currentToken = advanceParser(parser, sourceCode);
-
-    // Try to match the delimiter
+    
+    // Try to match a delimiter
     if (matchTokenType(parser, TOKEN_DELIMITER)) {
-        // Comsume the current delimiter token
+        // Consume the current delimiter token
         parser->currentToken = advanceParser(parser, sourceCode);
         return root;
     }
@@ -114,12 +116,14 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Explicitly handle missing delimiter case
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
         parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
+        parser->previousToken = typeAnnotationNode->token;
         reportParseError(parser);
         exit(1);
     }
     
     // Report an error if the declaration statement is invalid
     parser->parseError = PARSE_ERROR_DECLARATION_SYNTAX;
+    parser->previousToken = typeAnnotationNode->token;
     reportParseError(parser);
     exit(1);
 }
@@ -129,12 +133,22 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
 
     // Consume the current operator token '='
     parser->currentToken = advanceParser(parser, sourceCode);
-
-    // TODO : ADD LOGIC HERE...
-
+    
     // Create the AST for the assignment statement
     root->left = leftValue;
-    root->right = initASTNode(AST_IDENTIFIER, parser->currentToken);
+
+    // Try to match a literal
+    if (matchTokenType(parser, TOKEN_NUMERIC) || matchTokenType(parser, TOKEN_STRING_LITERAL)) {
+        root->right = initASTNode(AST_LITERAL, parser->currentToken);
+    }
+
+    // If a right value to be assigned is missing.
+    else {
+        parser->parseError = PARSE_ERROR_MISSING_RIGHT_VALUE;
+        parser->previousToken = root->left->left->token;
+        reportParseError(parser);
+        exit(1);
+    }
 
     // Consume the right value token
     parser->currentToken = advanceParser(parser, sourceCode);
@@ -142,6 +156,7 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
     // Try to match the delimiter
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
         parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
+        parser->previousToken = root->right->token;
         reportParseError(parser);
         exit(1);
     }
@@ -168,6 +183,7 @@ Parser *initParser() {
     parser->parseError = PARSE_ERROR_NONE;
     parser->lexer = lexer;
     parser->currentToken = NULL;
+    parser->previousToken = NULL;
 
     return parser;
 }
@@ -211,6 +227,7 @@ void displayAST(ASTNode* node, int level) {
         case AST_IDENTIFIER:             printf("AST_IDENTIFIER (%s)\n", node->token->lexeme); break;
         case AST_TYPE_ANNOTATION:        printf("AST_TYPE_ANNOTATION (%s)\n", node->token->lexeme); break;
         case AST_ASSIGNMENT_STATEMENT:   printf("AST_ASSIGNMENT (%s)\n", node->token->lexeme); break;
+        case AST_LITERAL:                printf("AST_LITERAL (%s)\n", node->token->lexeme); break;
         default:                         printf("UNKNOWN NODE\n"); break;
     }
 
@@ -219,23 +236,25 @@ void displayAST(ASTNode* node, int level) {
 }
 
 void reportParseError(Parser *parser) {
-    Token *currentToken = parser->currentToken;
-    printf("Parsing Error at %d:%d\n", currentToken->location.line, currentToken->location.column);
+    Token *token = parser->previousToken;
+    printf("Parsing Error at %d:%d\n", token->location.line, token->location.column);
 
     // Return if there is no error to display
     if (parser->parseError == PARSE_ERROR_NONE) return;
 
     switch (parser->parseError) {
         case PARSE_ERROR_MISSING_IDENTIFIER:
-            printf("[ERROR] Expecting an identifier for the variable after %s\n", currentToken->lexeme); break;
+            printf("[ERROR] Expecting an name for the variable after '%s'\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_ANNOTATION:
-            printf("[ERROR] Expecting \":\" after %s\n", currentToken->lexeme); break;
+            printf("[ERROR] Expecting ':' for the type annotation after '%s'\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_NAME:
-            printf("[ERROR] Expecting a type name after %s\n", currentToken->lexeme); break;
+            printf("[ERROR] Expecting a type name after ':'\n"); break;
         case PARSE_ERROR_DECLARATION_SYNTAX:
-            printf("[ERROR] Invalid declaration syntax after %s", currentToken->lexeme); break;
+            printf("[ERROR] Expecting '=' or a newline after '%s'", token->lexeme); break;
+        case PARSE_ERROR_MISSING_RIGHT_VALUE:
+            printf("[ERROR] Expecting something to be assigned to '%s' after '='\n", token->lexeme); break;
         case PARSE_ERROR_UNRESOLVABLE:
-            printf("[ERROR] Unresolvable token after %s\n", currentToken->lexeme); break;
+            printf("[ERROR] Unresolvable token after '%s'\n", token->lexeme); break;
         default:
             printf("[ERROR] Unable to generate diagnostic information...\n");
     }

@@ -17,6 +17,7 @@ typedef enum {
     AST_VARIABLE_DECLARATION,   /// Variable declaration node (e.g. "var number: Int").
     AST_CONSTANT_DECLARATION,   /// Constant declaration node (e.g. "let name: String").
     AST_IDENTIFIER,             /// Identifier node (e.g. number).
+    AST_LITERAL,                /// Literals node (e.g. 3.14, "Boyan Fan")
     AST_TYPE_ANNOTATION,        /// Type annotations (e.g. number: Int).
     AST_ASSIGNMENT_STATEMENT,   /// Assignment statement node (e.g. "number = 5").
 } ASTNodeType;

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "lexer.h"
+#include "token.h"
 
 /// Error codes for parsing.
 typedef enum {
@@ -23,6 +24,7 @@ typedef enum {
     PARSE_ERROR_MISSING_TYPE_NAME,         /// A required type name is missing.
     PARSE_ERROR_MISSING_DELIMITER,         /// A required delimiter is missing.
     PARSE_ERROR_DECLARATION_SYNTAX,        /// Invalid declaration syntax.
+    PARSE_ERROR_MISSING_RIGHT_VALUE,       /// A required right value to be assigned is missing.
     PARSE_ERROR_UNRESOLVABLE,              /// An unresolvable token occurred.
 } ParseError;
 
@@ -32,6 +34,7 @@ typedef struct {
     ParseError parseError;   /// Stores the current parsing error state, if any.
     Lexer* lexer;            /// Pointer to the lexer instance responsible for tokenizing input.
     Token* currentToken;     /// Pointer to the current token being processed by the parser.
+    Token* previousToken;    /// Pointer to the previous token for generating diagnostic information.
 } Parser;
 
 /// Parses a Program in the Opus programming language.

@@ -1,2 +1,2 @@
 var number: Int = 42
-let name: String = "Boyan Fan"
+let student: String = "Boyan Fan" 
