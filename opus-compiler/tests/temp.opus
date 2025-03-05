@@ -1,3 +1,2 @@
-var number: Int
-let name: String
-var input: Any
+var number: Int = 42
+let name: String = "Boyan Fan"

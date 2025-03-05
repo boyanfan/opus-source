@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
+#include "lexer.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -94,6 +95,48 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     root->left = identifierNode;
     root->right = typeAnnotationNode;
 
+    // Comsume the current type annotation token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the delimiter
+    if (matchTokenType(parser, TOKEN_DELIMITER)) {
+        // Comsume the current delimiter token
+        parser->currentToken = advanceParser(parser, sourceCode);
+        return root;
+    }
+
+    // Try if match assignment operator if there is an assignment statement after the declaration
+    if (matchTokenType(parser, TOKEN_ASSIGNMENT_OPERATOR)) { 
+        // The root now should be an assignment statement and the declaration is its left value
+        return parseAssignmentStatement(parser, sourceCode, root);
+    }
+
+    // Explicitly handle missing delimiter case
+    if (!matchTokenType(parser, TOKEN_DELIMITER)) {
+        parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
+        reportParseError(parser);
+        exit(1);
+    }
+    
+    // Report an error if the declaration statement is invalid
+    parser->parseError = PARSE_ERROR_DECLARATION_SYNTAX;
+    reportParseError(parser);
+    exit(1);
+}
+
+ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *leftValue) {
+    ASTNode *root = initASTNode(AST_ASSIGNMENT_STATEMENT, parser->currentToken);
+
+    // Consume the current operator token '='
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // TODO : ADD LOGIC HERE...
+
+    // Create the AST for the assignment statement
+    root->left = leftValue;
+    root->right = initASTNode(AST_IDENTIFIER, parser->currentToken);
+
+    // Consume the right value token
     parser->currentToken = advanceParser(parser, sourceCode);
 
     // Try to match the delimiter
@@ -102,9 +145,10 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
         reportParseError(parser);
         exit(1);
     }
-    
+
     // Comsume the current delimiter token
     parser->currentToken = advanceParser(parser, sourceCode);
+
     return root;
 }
 
@@ -188,6 +232,8 @@ void reportParseError(Parser *parser) {
             printf("[ERROR] Expecting \":\" after %s\n", currentToken->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_NAME:
             printf("[ERROR] Expecting a type name after %s\n", currentToken->lexeme); break;
+        case PARSE_ERROR_DECLARATION_SYNTAX:
+            printf("[ERROR] Invalid declaration syntax after %s", currentToken->lexeme); break;
         case PARSE_ERROR_UNRESOLVABLE:
             printf("[ERROR] Unresolvable token after %s\n", currentToken->lexeme); break;
         default:

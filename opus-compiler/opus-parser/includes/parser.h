@@ -22,6 +22,7 @@ typedef enum {
     PARSE_ERROR_MISSING_TYPE_ANNOTATION,   /// A required type annotaion is missing.
     PARSE_ERROR_MISSING_TYPE_NAME,         /// A required type name is missing.
     PARSE_ERROR_MISSING_DELIMITER,         /// A required delimiter is missing.
+    PARSE_ERROR_DECLARATION_SYNTAX,        /// Invalid declaration syntax.
     PARSE_ERROR_UNRESOLVABLE,              /// An unresolvable token occurred.
 } ParseError;
 
@@ -91,6 +92,10 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode);
 /// @return A pointer to the ASTNode representing the VariableDeclaration, or NULL if a parsing error occurs.
 ///
 ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode);
+
+/// 
+///
+ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *leftValue);
 
 /// Checks if the current token matches the expected token type.
 ///
