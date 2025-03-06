@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "lexer.h"
-#include "token.h"
 
 /// Error codes for parsing.
 typedef enum {
@@ -43,7 +42,7 @@ typedef struct {
 /// an Abstract Syntax Tree (AST) representing the entire program by parsing a sequence
 /// of statements. The function follows the grammar:
 ///
-///     Program → Statement Delimiter | Program
+///     Program -> Statement Delimiter | Program
 ///
 ///     AST_PROGRAM
 ///     ├── AST_STATEMENT
@@ -96,9 +95,76 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode);
 
-/// 
+/// Parses an assignment statement and constructs the corresponding AST node. It takes the left-value, which 
+/// can be either an identifier or a declaration statement, verifies the assignment syntax, and processes 
+/// the right-hand side (RHS) expression to construct an `ASTNode` representing the assignment. 
+/// The assignment statement follows the grammar:
+///
+///     AssignmentStatement -> LeftValue '=' Expression Delimiter
+///     LeftValue           -> Identifier | DeclarationStatement
+///     Expression          -> Literal
+///                         |  Identifier
+///                         |  FunctionCall
+///                         |  BinaryExpression
+///                         |  UnaryExpression
+///                         |  ...
+///
+/// An example of the resulting AST structure for 'var number: Int = 42' will be:
+///     
+///     AST_ASSIGNMENT (=)
+///     │   ├── AST_VARIABLE_DECLARATION (var)
+///     │   │   ├── AST_IDENTIFIER (number)
+///     │   │   ├── AST_TYPE_ANNOTATION (Int)
+///     │   ├── AST_LITERAL (42)
+///
+/// @param parser Pointer to the `Parser` instance that maintains the parsing state.
+/// @param sourceCode Pointer to the source code file being parsed.
+/// @param leftValue Pointer to an `ASTNode` representing the left-value, which could be an identifier or 
+///                  a declaration statement.
+/// @return Pointer to an `ASTNode` representing the assignment statement in the AST. Returns `NULL` 
+///         if an error occurs during parsing.
 ///
 ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *leftValue);
+
+/// Entry point for expression parsing. This function starts at the lowest precedence level.
+///
+ASTNode *parseExpression(Parser *parser, FILE *sourceCode);
+
+/// Logical or has the lowest precedence in our expression grammar.
+///
+ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode);
+
+/// Logical and comes next in precedence.
+///
+ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode);
+
+/// Parse additive expressions (+ and -).
+///
+ASTNode *parseAddition(Parser *parser, FILE *sourceCode);
+
+/// Parse multiplicative expressions (*, /, %).
+///
+ASTNode *parseMultiplication(Parser *parser, FILE *sourceCode);
+
+/// Parse unary operators (e.g., unary '-' or logical NOT).
+///
+ASTNode *parsePrefix(Parser *parser, FILE *sourceCode);
+
+/// Parse postfix expressions: function calls and factorial operator.
+///
+ASTNode *parsePostfix(Parser *parser, FILE *sourceCode);
+
+/// Parse primary expressions: literals, identifiers, parenthesized expressions, and boolean literals.
+/// 
+ASTNode *parsePrimary(Parser *parser, FILE *sourceCode);
+
+/// Parses a function call expression given the callee, where the callee is the function name.
+///
+ASTNode* parseFunctionCall(Parser *parser, FILE *sourceCode, ASTNode* callee);
+
+/// Parses a comma-separated argument list.
+///
+ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode);
 
 /// Checks if the current token matches the expected token type.
 ///

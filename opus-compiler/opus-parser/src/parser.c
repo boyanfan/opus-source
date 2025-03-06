@@ -136,22 +136,7 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
     
     // Create the AST for the assignment statement
     root->left = leftValue;
-
-    // Try to match a literal
-    if (matchTokenType(parser, TOKEN_NUMERIC) || matchTokenType(parser, TOKEN_STRING_LITERAL)) {
-        root->right = initASTNode(AST_LITERAL, parser->currentToken);
-    }
-
-    // If a right value to be assigned is missing.
-    else {
-        parser->parseError = PARSE_ERROR_MISSING_RIGHT_VALUE;
-        parser->previousToken = root->left->left->token;
-        reportParseError(parser);
-        exit(1);
-    }
-
-    // Consume the right value token
-    parser->currentToken = advanceParser(parser, sourceCode);
+    root->right = parseExpression(parser, sourceCode);
 
     // Try to match the delimiter
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
@@ -167,9 +152,212 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
     return root;
 }
 
-int matchTokenType(Parser *parser, TokenType type) { return parser->currentToken->tokenType == type; }
+ASTNode *parseExpression(Parser *parser, FILE *sourceCode) {
+    // Entry point for expression parsing, we start at the lowest precedence level (logical or)
+    return parseLogicalOr(parser, sourceCode);
+}
 
-Token *advanceParser(Parser *parser, FILE *sourceCode) { return getNextToken(parser->lexer, sourceCode); } 
+ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode) {
+// Where logical and has higher precedence than the logical or, so try to parse it first
+    ASTNode *root = parseLogicalAnd(parser, sourceCode);
+
+    // Try to match logical or 
+    while (matchTokenType(parser, TOKEN_LOGICAL_OR_OPERATOR)) {
+        ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
+
+        // Comsume the current operator token ('or')
+        parser->currentToken = advanceParser(parser, sourceCode);
+
+        binaryNode->left = root;
+        binaryNode->right = parseLogicalAnd(parser, sourceCode);
+        root = binaryNode;
+    }
+
+    return root;
+}
+
+ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode) {
+    ASTNode *root = parseAddition(parser, sourceCode);
+
+    // Try to match logical and 
+    while (matchTokenType(parser, TOKEN_LOGICAL_AND_OPERATOR)) {
+        ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
+
+        // Comsume the current operator token ('and')
+        parser->currentToken = advanceParser(parser, sourceCode);
+
+        binaryNode->left = root;
+        binaryNode->right = parseAddition(parser, sourceCode);
+        root = binaryNode;
+    }
+
+    return root;
+}
+
+ASTNode *parseAddition(Parser *parser, FILE *sourceCode) {
+    // Where multiplication has higher precedence than the addition, so try to parse it first
+    ASTNode *root = parseMultiplication(parser, sourceCode);
+
+    // Try to match addition and subtraction
+    while (matchTokenType(parser, TOKEN_ARITHMETIC_ADDITION) ||
+           matchTokenType(parser, TOKEN_ARITHMETIC_SUBTRACTION)) {
+        ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
+
+        // Comsume the current operator token ('+' or '-')
+        parser->currentToken = advanceParser(parser, sourceCode);
+
+        binaryNode->left = root;
+        binaryNode->right = parseMultiplication(parser, sourceCode);
+        root = binaryNode;
+    }
+
+    return root;
+}
+
+ASTNode *parseMultiplication(Parser *parser, FILE *sourceCode) {
+    // Where unary expression has higher precedence than the multiplication, so try to parse it first
+    ASTNode *root = parsePrefix(parser, sourceCode);
+
+    // Try to match addition and subtraction
+    while (matchTokenType(parser, TOKEN_ARITHMETIC_MULTIPLICATION) ||
+           matchTokenType(parser, TOKEN_ARITHMETIC_DIVISION) ||
+           matchTokenType(parser, TOKEN_ARITHMETIC_MODULO)) {
+        ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
+
+        // Comsume the current operator token ('*', '/' or '%')
+        parser->currentToken = advanceParser(parser, sourceCode);
+
+        binaryNode->left = root;
+        binaryNode->right = parsePrefix(parser, sourceCode);
+        root = binaryNode;
+    }
+
+    return root;
+}
+
+ASTNode *parsePrefix(Parser *parser, FILE *sourceCode) {
+    if (matchTokenType(parser, TOKEN_LOGICAL_NEGATION) || 
+        matchTokenType(parser, TOKEN_ARITHMETIC_SUBTRACTION)) {
+        ASTNode *root = initASTNode(AST_UNARY_EXPRESSION, parser->currentToken);
+        
+        // Comsume current operator token
+        parser->currentToken = advanceParser(parser, sourceCode);
+        root->left = parsePrefix(parser, sourceCode);
+
+        return root;
+    }
+
+    return parsePostfix(parser, sourceCode);
+}
+
+ASTNode *parsePostfix(Parser *parser, FILE *sourceCode) {
+    ASTNode *root = parsePrimary(parser, sourceCode);
+
+    // Try to match all if there are multiple postfix operators
+    while (1) {
+        // Try to parse the function call
+        if (matchTokenType(parser, TOKEN_OPENING_BRACKET)) {
+            root = parseFunctionCall(parser, sourceCode, root);
+        }
+
+        // Try to match factorial
+        else if (matchTokenType(parser, TOKEN_ARITHMETIC_FACTORIAL)) {
+            ASTNode *postfixNode = initASTNode(AST_POSTFIX_EXPRESSION, parser->currentToken);
+            postfixNode->left = root;
+            root = postfixNode;
+
+            parser->currentToken = advanceParser(parser, sourceCode);
+        }
+
+        else break;
+    }
+
+    return root;
+}
+
+ASTNode *parsePrimary(Parser *parser, FILE *sourceCode) {
+    // Try to match literals
+    if (matchTokenType(parser, TOKEN_NUMERIC) || matchTokenType(parser, TOKEN_STRING_LITERAL)) {
+        ASTNode *root = initASTNode(AST_LITERAL, parser->currentToken);
+        parser->currentToken = advanceParser(parser, sourceCode);
+        return root;
+    }
+
+    // Try to match identifiers
+    else if (matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        ASTNode *root = initASTNode(AST_IDENTIFIER, parser->currentToken);
+        parser->currentToken = advanceParser(parser, sourceCode);
+        return root;
+    } 
+
+    // Handle parenthesized expression 
+    else if (matchTokenType(parser, TOKEN_OPENING_BRACKET)) {
+        // Comsume opening bracket
+        parser->currentToken = advanceParser(parser, sourceCode);
+        ASTNode *root = parseExpression(parser, sourceCode);
+
+        // Opus Lexer guaranteed that the opening and closing brackets match
+        // Therefore we do not need to explicitly check if we could match the closing bracket
+        // Once the expression be parsed, the current token is guaranteed to be a closing bracket
+        // We comsume it without checking
+        parser->currentToken = advanceParser(parser, sourceCode);
+        return root;
+    }
+
+    // Try to match boolean literals
+    else if (matchTokenType(parser, TOKEN_KEYWORD_TRUE) || matchTokenType(parser, TOKEN_KEYWORD_FALSE)) {
+        ASTNode *root = initASTNode(AST_BOOLEAN_LITERAL, parser->currentToken);
+        parser->currentToken = advanceParser(parser, sourceCode);
+        return root;
+    }
+
+    // If we are unable to match anything
+    parser->parseError = PARSE_ERROR_UNRESOLVABLE;
+    parser->previousToken = parser->currentToken;
+    reportParseError(parser);
+    exit(1);
+}
+
+ASTNode* parseFunctionCall(Parser *parser, FILE *sourceCode, ASTNode* callee) {
+    ASTNode *root = initASTNode(AST_FUNCTION_CALL, callee->token);
+    root->left = callee;
+
+    // Comsume opening bracket
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Parse the argument list
+    ASTNode *argumentListNode = NULL;
+
+    // Try to parse arguments if any
+    if (!matchTokenType(parser, TOKEN_CLOSING_BRACKET)) {
+        argumentListNode = parseArgumentList(parser, sourceCode);
+    }
+
+    root->right = argumentListNode;
+
+    // Opus Lexer guaranteed that the opening and closing brackets match
+    // Therefore we do not need to explicitly check if we could match the closing bracket
+    // Once the expression be parsed, the current token is guaranteed to be a closing bracket
+    // We comsume it without checking
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    return root;
+}
+
+ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
+    // TODO : Implement this function
+    return NULL;
+}
+
+int matchTokenType(Parser *parser, TokenType type) { 
+    // Compare the current parsing token type with the provided expected token type
+    return parser->currentToken->tokenType == type; 
+}
+
+Token *advanceParser(Parser *parser, FILE *sourceCode) { 
+    // Comsume the current token and move to the next token (and unable to move backward)
+    return getNextToken(parser->lexer, sourceCode); 
+} 
 
 Parser *initParser() {
     // Allocate memory for a Parser instance and return NULL if memory allocation failed 
@@ -228,6 +416,11 @@ void displayAST(ASTNode* node, int level) {
         case AST_TYPE_ANNOTATION:        printf("AST_TYPE_ANNOTATION (%s)\n", node->token->lexeme); break;
         case AST_ASSIGNMENT_STATEMENT:   printf("AST_ASSIGNMENT (%s)\n", node->token->lexeme); break;
         case AST_LITERAL:                printf("AST_LITERAL (%s)\n", node->token->lexeme); break;
+        case AST_BOOLEAN_LITERAL:        printf("AST_BOOLEAN_LITERAL (%s)\n", node->token->lexeme); break;
+        case AST_BINARY_EXPRESSION:      printf("AST_BINARY_EXPRESSION (%s)\n", node->token->lexeme); break;
+        case AST_UNARY_EXPRESSION:       printf("AST_UNARY_EXPRESSION (%s)\n", node->token->lexeme); break;
+        case AST_POSTFIX_EXPRESSION:     printf("AST_POSTFIX_EXPRESSION (%s)\n", node->token->lexeme); break;
+        case AST_FUNCTION_CALL:          printf("AST_FUNCTION_CALL (%s)\n", node->token->lexeme); break;
         default:                         printf("UNKNOWN NODE\n"); break;
     }
 

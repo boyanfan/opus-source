@@ -18,8 +18,14 @@ typedef enum {
     AST_CONSTANT_DECLARATION,   /// Constant declaration node (e.g. "let name: String").
     AST_IDENTIFIER,             /// Identifier node (e.g. number).
     AST_LITERAL,                /// Literals node (e.g. 3.14, "Boyan Fan")
+    AST_BOOLEAN_LITERAL,        /// Boolean literals (e.g. "true", "flase")
     AST_TYPE_ANNOTATION,        /// Type annotations (e.g. number: Int).
     AST_ASSIGNMENT_STATEMENT,   /// Assignment statement node (e.g. "number = 5").
+    AST_BINARY_EXPRESSION,      /// Binary expressions (e.g. "1 + 1")
+    AST_UNARY_EXPRESSION,       /// Unary expressions (e.g. "!condition")
+    AST_POSTFIX_EXPRESSION,     /// Postfix expressions (e.g. "5!")
+    AST_FUNCTION_CALL,          /// Function call (e.g. "abs(-3.14)")
+    AST_ARGUMENT_LIST,          /// Argument list for the function call
 } ASTNodeType;
 
 /// AST Node structure for the abstract syntax tree.
