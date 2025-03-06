@@ -1,2 +1,1 @@
-var number: Int = 1 + 2 * 3
-let student: String = "Boyan Fan"
+var number: Int = getRandom(between: 0, and: maximumValue)

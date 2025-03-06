@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
+#include "ast.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -345,8 +346,44 @@ ASTNode* parseFunctionCall(Parser *parser, FILE *sourceCode, ASTNode* callee) {
 }
 
 ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
-    // TODO : Implement this function
-    return NULL;
+    // Each argument must be labeled, so try to match the first labeled argument 
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_ARGUMENT_LABEL;
+        parser->previousToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    ASTNode *argumentListNode = initASTNode(AST_ARGUMENT_LIST, NULL);
+    ASTNode *argumentNode = initASTNode(AST_ARGUMENT, NULL);
+    ASTNode *argumentLabelNode = initASTNode(AST_ARGUMENT_LABEL, parser->currentToken);
+
+    // Comsume the current token for the argument label
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    if (!matchTokenType(parser, TOKEN_COLON)) {
+        parser->parseError = PARSE_ERROR_MISSING_COLON_AFTER_LABEL;
+        parser->previousToken = argumentLabelNode->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Consume the colon token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to parse the expression 
+    argumentNode->right = parseExpression(parser, sourceCode);
+    argumentNode->left = argumentLabelNode;
+    argumentListNode->left = argumentNode;
+
+    // Check for additional arguments separated by commas
+    if (matchTokenType(parser, TOKEN_COMMA)) {
+        parser->currentToken = advanceParser(parser, sourceCode);
+        argumentListNode->right = parseArgumentList(parser, sourceCode);
+    }
+
+    else argumentListNode->right = initASTNode(AST_ARGUMENT_LIST, NULL);
+    return argumentListNode;
 }
 
 int matchTokenType(Parser *parser, TokenType type) { 
@@ -420,7 +457,10 @@ void displayAST(ASTNode* node, int level) {
         case AST_BINARY_EXPRESSION:      printf("AST_BINARY_EXPRESSION (%s)\n", node->token->lexeme); break;
         case AST_UNARY_EXPRESSION:       printf("AST_UNARY_EXPRESSION (%s)\n", node->token->lexeme); break;
         case AST_POSTFIX_EXPRESSION:     printf("AST_POSTFIX_EXPRESSION (%s)\n", node->token->lexeme); break;
-        case AST_FUNCTION_CALL:          printf("AST_FUNCTION_CALL (%s)\n", node->token->lexeme); break;
+        case AST_FUNCTION_CALL:          printf("AST_FUNCTION_CALL\n"); break;
+        case AST_ARGUMENT:               printf("AST_ARGUMENT\n"); break;
+        case AST_ARGUMENT_LABEL:         printf("AST_ARGUMENT_LABEL (%s)\n", node->token->lexeme); break;
+        case AST_ARGUMENT_LIST:          printf("AST_ARGUMENT_LIST\n"); break;
         default:                         printf("UNKNOWN NODE\n"); break;
     }
 
@@ -443,11 +483,15 @@ void reportParseError(Parser *parser) {
         case PARSE_ERROR_MISSING_TYPE_NAME:
             printf("[ERROR] Expecting a type name after ':'\n"); break;
         case PARSE_ERROR_DECLARATION_SYNTAX:
-            printf("[ERROR] Expecting '=' or a newline after '%s'", token->lexeme); break;
+            printf("[ERROR] Expecting '=' or a newline after '%s'\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_RIGHT_VALUE:
             printf("[ERROR] Expecting something to be assigned to '%s' after '='\n", token->lexeme); break;
         case PARSE_ERROR_UNRESOLVABLE:
             printf("[ERROR] Unresolvable token after '%s'\n", token->lexeme); break;
+        case PARSE_ERROR_MISSING_ARGUMENT_LABEL:
+            printf("[ERROR] Expecting label for argument %s in the function call.\n", token->lexeme); break;
+        case PARSE_ERROR_MISSING_COLON_AFTER_LABEL:
+            printf("[ERROR] Expecting ':' after the label '%s'", token->lexeme); break;
         default:
             printf("[ERROR] Unable to generate diagnostic information...\n");
     }

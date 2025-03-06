@@ -17,14 +17,16 @@
 
 /// Error codes for parsing.
 typedef enum {
-    PARSE_ERROR_NONE,                      /// No error occurred during parsing.
-    PARSE_ERROR_MISSING_IDENTIFIER,        /// A required identifier is missing.
-    PARSE_ERROR_MISSING_TYPE_ANNOTATION,   /// A required type annotaion is missing.
-    PARSE_ERROR_MISSING_TYPE_NAME,         /// A required type name is missing.
-    PARSE_ERROR_MISSING_DELIMITER,         /// A required delimiter is missing.
-    PARSE_ERROR_DECLARATION_SYNTAX,        /// Invalid declaration syntax.
-    PARSE_ERROR_MISSING_RIGHT_VALUE,       /// A required right value to be assigned is missing.
-    PARSE_ERROR_UNRESOLVABLE,              /// An unresolvable token occurred.
+    PARSE_ERROR_NONE,                        /// No error occurred during parsing.
+    PARSE_ERROR_MISSING_IDENTIFIER,          /// A required identifier is missing.
+    PARSE_ERROR_MISSING_TYPE_ANNOTATION,     /// A required type annotaion is missing.
+    PARSE_ERROR_MISSING_TYPE_NAME,           /// A required type name is missing.
+    PARSE_ERROR_MISSING_DELIMITER,           /// A required delimiter is missing.
+    PARSE_ERROR_DECLARATION_SYNTAX,          /// Invalid declaration syntax.
+    PARSE_ERROR_MISSING_RIGHT_VALUE,         /// A required right value to be assigned is missing.
+    PARSE_ERROR_MISSING_ARGUMENT_LABEL,      /// A required argument label is missing.
+    PARSE_ERROR_MISSING_COLON_AFTER_LABEL,   /// A required colon after the label is missing.
+    PARSE_ERROR_UNRESOLVABLE,                /// An unresolvable token occurred.
 } ParseError;
 
 /// The parser for the Opus programming language.
