@@ -25,6 +25,7 @@ typedef enum {
     PARSE_ERROR_DECLARATION_SYNTAX,          /// Invalid declaration syntax.
     PARSE_ERROR_MISSING_RIGHT_VALUE,         /// A required right value to be assigned is missing.
     PARSE_ERROR_MISSING_ARGUMENT_LABEL,      /// A required argument label is missing.
+    PARSE_ERROR_MISSING_PARAMETER_LABEL,     /// A required parameter label.
     PARSE_ERROR_MISSING_COLON_AFTER_LABEL,   /// A required colon after the label is missing.
     PARSE_ERROR_MISSING_FUNCTION_NAME,       /// A required function name is missing.
     PARSE_ERROR_MISSING_OPENING_BRACKET,     /// A required opening bracket is missing.
@@ -36,10 +37,10 @@ typedef enum {
 /// The parser for the Opus programming language.
 /// It processes tokens from the lexer and constructs an Abstract Syntax Tree (AST).
 typedef struct {
-    ParseError parseError;   /// Stores the current parsing error state, if any.
-    Lexer* lexer;            /// Pointer to the lexer instance responsible for tokenizing input.
-    Token* currentToken;     /// Pointer to the current token being processed by the parser.
-    Token* previousToken;    /// Pointer to the previous token for generating diagnostic information.
+    ParseError parseError;    /// Stores the current parsing error state, if any.
+    Lexer* lexer;             /// Pointer to the lexer instance responsible for tokenizing input.
+    Token* currentToken;      /// Pointer to the current token being processed by the parser.
+    Token* diagnosticToken;   /// Pointer to the previous token for generating diagnostic information.
 } Parser;
 
 /// Parses a Program in the Opus programming language.

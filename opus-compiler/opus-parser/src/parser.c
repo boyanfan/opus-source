@@ -3,12 +3,10 @@
 // Created by Boyan Fan, 2025/03/02 
 //
 
+#include <_ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
-#include "ast.h"
-#include "lexer.h"
-#include "token.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -72,7 +70,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Then try to parse the identifier
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
         parser->parseError = PARSE_ERROR_MISSING_IDENTIFIER;
-        parser->previousToken = root->token;
+        parser->diagnosticToken = root->token;
         reportParseError(parser);
         exit(1);
     }
@@ -86,7 +84,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Try to match colon 
     if (!matchTokenType(parser, TOKEN_COLON)) {
         parser->parseError = PARSE_ERROR_MISSING_TYPE_ANNOTATION;
-        parser->previousToken = identifierNode->token;
+        parser->diagnosticToken = identifierNode->token;
         reportParseError(parser);
         exit(1);
     }
@@ -97,7 +95,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Try to match the type identifier
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
         parser->parseError = PARSE_ERROR_MISSING_TYPE_NAME;
-        parser->previousToken = parser->currentToken;
+        parser->diagnosticToken = parser->currentToken;
         reportParseError(parser);
         exit(1);
     }
@@ -128,14 +126,14 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
     // Explicitly handle missing delimiter case
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
         parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
-        parser->previousToken = typeAnnotationNode->token;
+        parser->diagnosticToken = typeAnnotationNode->token;
         reportParseError(parser);
         exit(1);
     }
     
     // Report an error if the declaration statement is invalid
     parser->parseError = PARSE_ERROR_DECLARATION_SYNTAX;
-    parser->previousToken = typeAnnotationNode->token;
+    parser->diagnosticToken = typeAnnotationNode->token;
     reportParseError(parser);
     exit(1);
 }
@@ -153,7 +151,7 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
     // Try to match the delimiter
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
         parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
-        parser->previousToken = root->right->token;
+        parser->diagnosticToken = root->right->token;
         reportParseError(parser);
         exit(1);
     }
@@ -173,7 +171,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
     // Try to match the function name
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
         parser->parseError = PARSE_ERROR_MISSING_FUNCTION_NAME;
-        parser->previousToken = functionDefinitionNode->token;
+        parser->diagnosticToken = functionDefinitionNode->token;
         reportParseError(parser);
         exit(1);
     }
@@ -186,7 +184,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
     // Try to match the opening bracket token for the parameter list
     if (!matchTokenType(parser, TOKEN_OPENING_BRACKET)) {
         parser->parseError = PARSE_ERROR_MISSING_OPENING_BRACKET;
-        parser->previousToken = functionDefinitionNode->left->token;
+        parser->diagnosticToken = functionDefinitionNode->left->token;
         reportParseError(parser);
         exit(1);
     }
@@ -206,10 +204,10 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
     // Once the expression be parsed, the current token is guaranteed to be a closing bracket
     // We comsume it without checking
     parser->currentToken = advanceParser(parser, sourceCode);
-
+    
     if (!matchTokenType(parser, TOKEN_RIGHT_ARROW)) {
         parser->parseError = PARSE_ERROR_MISSING_RIGHT_ARROW;
-        parser->previousToken = parser->currentToken;
+        parser->diagnosticToken = parser->currentToken;
         reportParseError(parser);
         exit(1); 
     }
@@ -220,7 +218,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
     // Try to match the function return type
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
         parser->parseError = PARSE_ERROR_MISSING_RETURN_TYPE;
-        parser->previousToken = parser->currentToken;
+        parser->diagnosticToken = parser->currentToken;
         reportParseError(parser);
         exit(1);
     }
@@ -247,7 +245,49 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
     return functionDefinitionNode;
 }
 
-ASTNode *parseParameterList(Parser *parser, FILE *sourceCode) { return NULL; }
+ASTNode *parseParameterList(Parser *parser, FILE *sourceCode) { 
+    // Each parameter must be labeled, so try to match the first labeled argument 
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_PARAMETER_LABEL;
+        parser->diagnosticToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    ASTNode *parameterListNode = initASTNode(AST_PARAMETER_LIST, NULL);
+    ASTNode *parameterNode = initASTNode(AST_PARAMETER, NULL);
+    ASTNode *parameterLabelNode = initASTNode(AST_PARAMETER_LABEL, parser->currentToken);
+
+    // Comsume the current token for the parameter label
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    if (!matchTokenType(parser, TOKEN_COLON)) {
+        parser->parseError = PARSE_ERROR_MISSING_COLON_AFTER_LABEL;
+        parser->diagnosticToken = parameterLabelNode->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Consume the colon token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to parse type annotation
+    parameterNode->right = initASTNode(AST_TYPE_ANNOTATION, parser->currentToken);
+    parameterNode->left = parameterLabelNode;
+    parameterListNode->left = parameterNode;
+
+    // Comsume type annotation 
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Check for additional parameters separated by commas 
+    if (matchTokenType(parser, TOKEN_COMMA)) {
+        parser->currentToken = advanceParser(parser, sourceCode);
+        parameterListNode->right = parseParameterList(parser, sourceCode);
+    }
+
+    else parameterListNode->right = initASTNode(AST_PARAMETER_LIST, NULL);
+    return parameterListNode;
+}
 
 ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
     // Comsume the opening curly bracket
@@ -257,7 +297,7 @@ ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
     ASTNode *currentNode = codeBlockNode;
 
     // Try to parse statements until we reach '}'
-    while (!matchTokenType(parser, TOKEN_EOF)) {
+    while (!matchTokenType(parser, TOKEN_CLOSING_CURLY_BRACKET) && !matchTokenType(parser, TOKEN_EOF)) {
         // Skip delimiter tokens 
         if (matchTokenType(parser, TOKEN_DELIMITER)) {
             parser->currentToken = advanceParser(parser, sourceCode);
@@ -265,21 +305,17 @@ ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
         }
 
         currentNode->left = parseStatement(parser, sourceCode);
+        currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
+        currentNode = currentNode->right;
 
-        // Opus Lexer guaranteed that the opening and closing brackets match
-        // Therefore we do not need to explicitly check if we could match the closing bracket
-        // Once the expression be parsed, the current token is guaranteed to be a closing bracket
-        // We comsume it without checking
-        if (!matchTokenType(parser, TOKEN_CLOSING_CURLY_BRACKET)) {
-            currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
-            currentNode = currentNode->right;
-        }
-
-        else {
-            currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
-            parser->currentToken = advanceParser(parser, sourceCode);
-        }
     }
+
+    // Opus Lexer guaranteed that the opening and closing brackets match
+    // Therefore we do not need to explicitly check if we could match the closing bracket
+    // Once the expression be parsed, the current token is guaranteed to be a closing bracket
+    // We comsume the closing curly bracket without checking
+    currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
+    parser->currentToken = advanceParser(parser, sourceCode);
 
     return codeBlockNode;
 }
@@ -445,7 +481,7 @@ ASTNode *parsePrimary(Parser *parser, FILE *sourceCode) {
 
     // If we are unable to match anything
     parser->parseError = PARSE_ERROR_UNRESOLVABLE;
-    parser->previousToken = parser->currentToken;
+    parser->diagnosticToken = parser->currentToken;
     reportParseError(parser);
     exit(1);
 }
@@ -479,8 +515,8 @@ ASTNode* parseFunctionCall(Parser *parser, FILE *sourceCode, ASTNode* callee) {
 ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
     // Each argument must be labeled, so try to match the first labeled argument 
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
-        parser->parseError = PARSE_ERROR_MISSING_ARGUMENT_LABEL;
-        parser->previousToken = parser->currentToken;
+parser->parseError = PARSE_ERROR_MISSING_ARGUMENT_LABEL;
+        parser->diagnosticToken = parser->currentToken;
         reportParseError(parser);
         exit(1);
     }
@@ -494,7 +530,7 @@ ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
 
     if (!matchTokenType(parser, TOKEN_COLON)) {
         parser->parseError = PARSE_ERROR_MISSING_COLON_AFTER_LABEL;
-        parser->previousToken = argumentLabelNode->token;
+        parser->diagnosticToken = argumentLabelNode->token;
         reportParseError(parser);
         exit(1);
     }
@@ -539,7 +575,7 @@ Parser *initParser() {
     parser->parseError = PARSE_ERROR_NONE;
     parser->lexer = lexer;
     parser->currentToken = NULL;
-    parser->previousToken = NULL;
+    parser->diagnosticToken = NULL;
 
     return parser;
 }
@@ -599,6 +635,7 @@ void displayAST(ASTNode* node, int level) {
         case AST_FUNCTION_RETURN_TYPE:      printf("AST_FUNCTION_RETURN_TYPE (%s)\n", node->token->lexeme); break;
         case AST_FUNCTION_IMPLEMENTATION:   printf("AST_FUNCTION_IMPLEMENTATION\n"); break;
         case AST_CODE_BLOCK:                printf("AST_CODE_BLOCK\n"); break;
+        case AST_PARAMETER:                 printf("AST_PARAMETER\n"); break;
         default:                            printf("UNKNOWN NODE\n"); break;
     }
 
@@ -607,7 +644,7 @@ void displayAST(ASTNode* node, int level) {
 }
 
 void reportParseError(Parser *parser) {
-    Token *token = parser->previousToken;
+    Token *token = parser->diagnosticToken;
     printf("Parsing Error at %d:%d\n", token->location.line, token->location.column);
 
     // Return if there is no error to display
@@ -642,4 +679,3 @@ void reportParseError(Parser *parser) {
             printf("[ERROR] Unable to generate diagnostic information...\n");
     }
 }
-

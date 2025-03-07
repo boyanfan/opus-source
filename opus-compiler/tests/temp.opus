@@ -1,5 +1,5 @@
-func greeting() -> String {
-    var number: Int
-    let name: String
+func greeting(target: String, times: Int) -> String {
+    var number: Int = times
 }
 
+greeting(target: "Boyan Fan", times: 42)

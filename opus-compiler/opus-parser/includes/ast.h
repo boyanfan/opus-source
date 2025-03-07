@@ -31,6 +31,7 @@ typedef enum {
     AST_FUNCTION_IMPLEMENTATION,   /// Function implementation. 
     AST_FUNCTION_DEFINITION,       /// Function definitions (e.g. "func isPrime(number: Int) -> Bool").
     AST_FUNCTION_SIGNATURE,        /// Function signature (e.g. "for the above example: (Int) -> Bool").
+    AST_PARAMETER,                 /// Parameter label and its type.
     AST_PARAMETER_LIST,            /// Function parameter list (e.g. "(number: Int, ...)")
     AST_PARAMETER_LABEL,           /// The label of the parameter.
     AST_FUNCTION_RETURN_TYPE,      /// Function return type (e.g. "-> Bool").
