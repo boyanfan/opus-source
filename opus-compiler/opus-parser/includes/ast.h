@@ -13,21 +13,28 @@
 
 /// AST Node Types for representing different syntactic constructs in the language.
 typedef enum {
-    AST_PROGRAM,                /// Root node of the entire program.
-    AST_VARIABLE_DECLARATION,   /// Variable declaration node (e.g. "var number: Int").
-    AST_CONSTANT_DECLARATION,   /// Constant declaration node (e.g. "let name: String").
-    AST_IDENTIFIER,             /// Identifier node (e.g. number).
-    AST_LITERAL,                /// Literals node (e.g. 3.14, "Boyan Fan")
-    AST_BOOLEAN_LITERAL,        /// Boolean literals (e.g. "true", "flase")
-    AST_TYPE_ANNOTATION,        /// Type annotations (e.g. number: Int).
-    AST_ASSIGNMENT_STATEMENT,   /// Assignment statement node (e.g. "number = 5").
-    AST_BINARY_EXPRESSION,      /// Binary expressions (e.g. "1 + 1")
-    AST_UNARY_EXPRESSION,       /// Unary expressions (e.g. "!condition")
-    AST_POSTFIX_EXPRESSION,     /// Postfix expressions (e.g. "5!")
-    AST_FUNCTION_CALL,          /// Function call (e.g. "abs(-3.14)")
-    AST_ARGUMENT,               /// Argument label and its value.
-    AST_ARGUMENT_LABEL,         /// The label of the argument.
-    AST_ARGUMENT_LIST,          /// Argument list for the function call.
+    AST_PROGRAM,                   /// Root node of the entire program.
+    AST_VARIABLE_DECLARATION,      /// Variable declaration node (e.g. "var number: Int").
+    AST_CONSTANT_DECLARATION,      /// Constant declaration node (e.g. "let name: String").
+    AST_IDENTIFIER,                /// Identifier node (e.g. number).
+    AST_LITERAL,                   /// Literals node (e.g. 3.14, "Boyan Fan")
+    AST_BOOLEAN_LITERAL,           /// Boolean literals (e.g. "true", "flase")
+    AST_TYPE_ANNOTATION,           /// Type annotations (e.g. number: Int).
+    AST_ASSIGNMENT_STATEMENT,      /// Assignment statement node (e.g. "number = 5").
+    AST_BINARY_EXPRESSION,         /// Binary expressions (e.g. "1 + 1")
+    AST_UNARY_EXPRESSION,          /// Unary expressions (e.g. "!condition")
+    AST_POSTFIX_EXPRESSION,        /// Postfix expressions (e.g. "5!")
+    AST_FUNCTION_CALL,             /// Function call (e.g. "abs(-3.14)")
+    AST_ARGUMENT,                  /// Argument label and its value.
+    AST_ARGUMENT_LABEL,            /// The label of the argument.
+    AST_ARGUMENT_LIST,             /// Argument list for the function call.
+    AST_FUNCTION_IMPLEMENTATION,   /// Function implementation. 
+    AST_FUNCTION_DEFINITION,       /// Function definitions (e.g. "func isPrime(number: Int) -> Bool").
+    AST_FUNCTION_SIGNATURE,        /// Function signature (e.g. "for the above example: (Int) -> Bool").
+    AST_PARAMETER_LIST,            /// Function parameter list (e.g. "(number: Int, ...)")
+    AST_PARAMETER_LABEL,           /// The label of the parameter.
+    AST_FUNCTION_RETURN_TYPE,      /// Function return type (e.g. "-> Bool").
+    AST_CODE_BLOCK,                /// A code block (e.g. "{...}").
 } ASTNodeType;
 
 /// AST Node structure for the abstract syntax tree.

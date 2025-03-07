@@ -1,1 +1,5 @@
-var number: Int = getRandom(between: 0, and: maximumValue)
+func greeting() -> String {
+    var number: Int
+    let name: String
+}
+

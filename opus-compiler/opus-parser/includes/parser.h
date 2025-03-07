@@ -26,6 +26,10 @@ typedef enum {
     PARSE_ERROR_MISSING_RIGHT_VALUE,         /// A required right value to be assigned is missing.
     PARSE_ERROR_MISSING_ARGUMENT_LABEL,      /// A required argument label is missing.
     PARSE_ERROR_MISSING_COLON_AFTER_LABEL,   /// A required colon after the label is missing.
+    PARSE_ERROR_MISSING_FUNCTION_NAME,       /// A required function name is missing.
+    PARSE_ERROR_MISSING_OPENING_BRACKET,     /// A required opening bracket is missing.
+    PARSE_ERROR_MISSING_RIGHT_ARROW,         /// A required right arrow is missing.
+    PARSE_ERROR_MISSING_RETURN_TYPE,         /// A required return type is missing.
     PARSE_ERROR_UNRESOLVABLE,                /// An unresolvable token occurred.
 } ParseError;
 
@@ -45,6 +49,8 @@ typedef struct {
 /// of statements. The function follows the grammar:
 ///
 ///     Program -> Statement Delimiter | Program
+///
+/// The resulting AST structure will be:
 ///
 ///     AST_PROGRAM
 ///     ├── AST_STATEMENT
@@ -128,43 +134,220 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *leftValue);
 
-/// Entry point for expression parsing. This function starts at the lowest precedence level.
+ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode);
+
+ASTNode *parseParameterList(Parser *parser, FILE *sourceCode);
+
+ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode);
+
+/// Parses an expression in the Opus programming language.
+///
+/// This function serves as the entry point for parsing expressions. It constructs an
+/// Abstract Syntax Tree (AST) that represents various types of expressions, including
+/// arithmetic, boolean, and function calls. It follows the grammar:
+///
+///     Expression -> LogicalOr
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed expression, or NULL if a parsing error occurs.
 ///
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode);
 
-/// Logical or has the lowest precedence in our expression grammar.
+/// Parses a logical OR expression in the Opus programming language.
+///
+/// This function handles logical OR operations (`||`) and constructs an AST node
+/// representing the binary expression. The function follows the grammar:
+///
+///     LogicalOr -> LogicalAnd "||" LogicalAnd
+/// 
+/// The resulting AST structure will be:
+///
+///     AST_PROGRAM
+///     ├── AST_BINARY_EXPRESSION (||)
+///     │   ├── AST_IDENTIFIER (lsh)
+///     │   ├── AST_IDENTIFIER (rhs)
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed logical OR expression.
 ///
 ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode);
 
-/// Logical and comes next in precedence.
+/// Parses a logical AND expression in the Opus programming language.
+///
+/// This function processes logical AND operations (`&&`) and ensures proper
+/// precedence by deferring to lower precedence expressions. The function follows
+/// the grammar:
+///
+///     LogicalAnd -> Addition "&&" Addition
+///
+/// The resulting AST structure will be:
+///
+///     AST_PROGRAM
+///     ├── AST_BINARY_EXPRESSION (&&)
+///     │   ├── AST_IDENTIFIER (lsh)
+///     │   ├── AST_IDENTIFIER (rhs)
+///     ├── AST_PROGRAM
+///     
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed logical AND expression.
 ///
 ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode);
 
-/// Parse additive expressions (+ and -).
+/// Parses an addition or subtraction expression in the Opus programming language.
+///
+/// This function handles addition (`+`) and subtraction (`-`) operations, ensuring
+/// left-associativity and proper precedence over multiplication. It follows the grammar:
+///
+///     Addition -> Multiplication ("+" | "-") Multiplication
+///
+/// The resulting AST structure for ("1 + 2 * 3") will be:
+///
+///     AST_PROGRAM
+///     ├── AST_BINARY_EXPRESSION (+)
+///     │   ├── AST_LITERAL (1)
+///     │   ├── AST_BINARY_EXPRESSION (*)
+///     │   │   ├── AST_LITERAL (2)
+///     │   │   ├── AST_LITERAL (3)
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed addition or subtraction expression.
 ///
 ASTNode *parseAddition(Parser *parser, FILE *sourceCode);
 
-/// Parse multiplicative expressions (*, /, %).
+/// Parses a multiplication, division, or modulo expression in the Opus programming language.
+///
+/// This function handles multiplication (`*`), division (`/`), and modulo (`%`)
+/// operations, ensuring left-associativity and higher precedence than addition and
+/// subtraction. It follows the grammar:
+///
+///     Multiplication -> Prefix ("*" | "/" | "%") Prefix
+///
+/// The resulting AST structure for ("1 + 2 * 3") will be:
+///
+///     AST_PROGRAM
+///     ├── AST_BINARY_EXPRESSION (+)
+///     │   ├── AST_LITERAL (1)
+///     │   ├── AST_BINARY_EXPRESSION (*)
+///     │   │   ├── AST_LITERAL (2)
+///     │   │   ├── AST_LITERAL (3)
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed multiplication, division, or modulo expression.
 ///
 ASTNode *parseMultiplication(Parser *parser, FILE *sourceCode);
 
-/// Parse unary operators (e.g., unary '-' or logical NOT).
+/// Parses a prefix unary expression in the Opus programming language.
+///
+/// This function handles unary operations such as negation (`-`) and logical NOT (`!`).
+/// It ensures correct right-associativity and higher precedence than multiplication.
+/// The function follows the grammar:
+///
+///     Prefix -> ("-" | "!") Prefix | Postfix 
+///
+/// The resulting AST structure will be:
+///
+///     AST_PROGRAM
+///     ├── AST_UNARY_EXPRESSION (!)
+///     │   ├── AST_IDENTIFIER (condition)
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed prefix unary expression.
 ///
 ASTNode *parsePrefix(Parser *parser, FILE *sourceCode);
 
-/// Parse postfix expressions: function calls and factorial operator.
+/// Parses a postfix expression in the Opus programming language.
+///
+/// This function handles postfix operations such as the factorial operator (`!`)
+/// and function calls. It follows the grammar:
+///
+///     Postfix -> Primary ("!" | FunctionCall)
+///
+/// The resulting AST structure will be:
+///
+///     AST_PROGRAM
+///     ├── AST_POSTFIX_EXPRESSION (!)
+///     │   ├── AST_LITERAL (42)
+///     ├── AST_PROGRAM
+/// 
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed postfix expression.
 ///
 ASTNode *parsePostfix(Parser *parser, FILE *sourceCode);
 
-/// Parse primary expressions: literals, identifiers, parenthesized expressions, and boolean literals.
-/// 
+/// Parses a primary expression in the Opus programming language.
+///
+/// This function handles literals, identifiers, boolean values, and parenthesized expressions.
+/// It follows the grammar:
+///
+///     Primary -> NUMERIC
+///             | STRING_LITERAL
+///             | IDENTIFIER
+///             | BOOLEAN_LITERAL
+///             | '(' Expression ')'
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed primary expression.
+///
 ASTNode *parsePrimary(Parser *parser, FILE *sourceCode);
 
-/// Parses a function call expression given the callee, where the callee is the function name.
+/// Parses a function call in the Opus programming language.
+///
+/// This function handles function calls, ensuring that each argument is labeled.
+/// It follows the grammar:
+///
+///     FunctionCall -> IDENTIFIER '(' ArgumentList? ')'
+///
+/// The resulting AST structure will be:
+///
+///     AST_FUNCTION_CALL
+///         ├── AST_IDENTIFIER (function name)
+///         └── AST_ARGUMENT_LIST (arguments)
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @param callee A pointer to an ASTNode representing the function name.
+/// @return A pointer to the ASTNode representing the function call expression.
 ///
 ASTNode* parseFunctionCall(Parser *parser, FILE *sourceCode, ASTNode* callee);
 
-/// Parses a comma-separated argument list.
+/// Parses an argument list for a function call in the Opus programming language.
+///
+/// This function ensures that all arguments are labeled, following the grammar:
+///
+///     ArgumentList -> LabeledArgument ( ',' ArgumentList )?
+///     LabeledArgument -> IDENTIFIER ':' Expression
+///
+/// The resulting AST structure for "getRandomInt(between: 1, and: 100)" will be:
+///
+///     AST_PROGRAM
+///     ├── AST_FUNCTION_CALL
+///     │   ├── AST_IDENTIFIER (getRandomInt)
+///     │   ├── AST_ARGUMENT_LIST
+///     │   │   ├── AST_ARGUMENT
+///     │   │   │   ├── AST_ARGUMENT_LABEL (between)
+///     │   │   │   ├── AST_LITERAL (1)
+///     │   │   ├── AST_ARGUMENT_LIST
+///     │   │   │   ├── AST_ARGUMENT
+///     │   │   │   │   ├── AST_ARGUMENT_LABEL (and)
+///     │   │   │   │   ├── AST_LITERAL (100)
+///     │   │   │   ├── AST_ARGUMENT_LIST
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed argument list.
 ///
 ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode);
 

@@ -103,7 +103,7 @@ typedef enum {
 
 /// The location of a token in the source code.
 typedef struct {
-    int line, column;   // The line and the column where the token begins (both starting from 1).
+    int line, column;   /// The line and the column where the token begins (both starting from 1).
 } Location;
 
 /// Token structure to store token information in the lexical analysis process.

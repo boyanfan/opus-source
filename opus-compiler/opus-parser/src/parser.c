@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "parser.h"
 #include "ast.h"
+#include "lexer.h"
+#include "token.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -14,7 +16,7 @@ ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
 
     while (!matchTokenType(parser, TOKEN_EOF)) {
         // Skip orphan delimiters like (delimiter delimiter...)
-        if (parser->currentToken->tokenType == TOKEN_DELIMITER) {
+        if (matchTokenType(parser, TOKEN_DELIMITER)) {
             parser->currentToken = advanceParser(parser, sourceCode);
             continue;
         }
@@ -42,10 +44,19 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
         return parseVariableDeclaration(parser, sourceCode);
     }
 
+    // Try to parse function definition statement 
+    else if (matchTokenType(parser, TOKEN_KEYWORD_FUNC)) return parseFunctionDefinition(parser, sourceCode); 
+
+    // Try to parse an primary expression 
+    else if (matchTokenType(parser, TOKEN_IDENTIFIER) || matchTokenType(parser, TOKEN_NUMERIC) ||
+        matchTokenType(parser, TOKEN_STRING_LITERAL) || matchTokenType(parser, TOKEN_ARITHMETIC_SUBTRACTION) ||
+        matchTokenType(parser, TOKEN_LOGICAL_NEGATION) || matchTokenType(parser, TOKEN_OPENING_BRACKET)) {
+        return parseExpression(parser, sourceCode);
+    } 
+
     // If unable to parse the statement
     parser->parseError = PARSE_ERROR_UNRESOLVABLE;
     reportParseError(parser);
-
     exit(1);
 }
 
@@ -153,13 +164,133 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
     return root;
 }
 
+ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
+    ASTNode *functionDefinitionNode = initASTNode(AST_FUNCTION_DEFINITION, parser->currentToken);
+
+    // Consume the 'func' keyword
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the function name
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_FUNCTION_NAME;
+        parser->previousToken = functionDefinitionNode->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    functionDefinitionNode->left = initASTNode(AST_IDENTIFIER, parser->currentToken);
+
+    // Consume the identifier token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the opening bracket token for the parameter list
+    if (!matchTokenType(parser, TOKEN_OPENING_BRACKET)) {
+        parser->parseError = PARSE_ERROR_MISSING_OPENING_BRACKET;
+        parser->previousToken = functionDefinitionNode->left->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Comsume opening bracket token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match parameter list if present 
+    ASTNode *parameterListNode = initASTNode(AST_PARAMETER_LIST, NULL);
+
+    if (!matchTokenType(parser, TOKEN_CLOSING_BRACKET)) {
+        parameterListNode = parseParameterList(parser, sourceCode);
+    }
+
+    // Opus Lexer guaranteed that the opening and closing brackets match
+    // Therefore we do not need to explicitly check if we could match the closing bracket
+    // Once the expression be parsed, the current token is guaranteed to be a closing bracket
+    // We comsume it without checking
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    if (!matchTokenType(parser, TOKEN_RIGHT_ARROW)) {
+        parser->parseError = PARSE_ERROR_MISSING_RIGHT_ARROW;
+        parser->previousToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1); 
+    }
+    
+    // Comsume right arrow '->' token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the function return type
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_RETURN_TYPE;
+        parser->previousToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    ASTNode *functionSignatureNode = initASTNode(AST_FUNCTION_SIGNATURE, NULL);
+    functionSignatureNode->left = parameterListNode;
+    functionSignatureNode->right = initASTNode(AST_FUNCTION_RETURN_TYPE, parser->currentToken);
+
+    functionDefinitionNode->right = functionSignatureNode;
+
+    // Comsume the current return type token 
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the function body if it is provided 
+    if (matchTokenType(parser, TOKEN_OPENING_CURLY_BRACKET)) {
+        ASTNode *functionImplementationNode = initASTNode(AST_FUNCTION_IMPLEMENTATION, NULL);
+
+        functionImplementationNode->left = functionDefinitionNode;
+        functionImplementationNode->right = parseCodeBlock(parser, sourceCode);
+
+        return functionImplementationNode;
+    }
+
+    return functionDefinitionNode;
+}
+
+ASTNode *parseParameterList(Parser *parser, FILE *sourceCode) { return NULL; }
+
+ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
+    // Comsume the opening curly bracket
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    ASTNode *codeBlockNode = initASTNode(AST_CODE_BLOCK, NULL);
+    ASTNode *currentNode = codeBlockNode;
+
+    // Try to parse statements until we reach '}'
+    while (!matchTokenType(parser, TOKEN_EOF)) {
+        // Skip delimiter tokens 
+        if (matchTokenType(parser, TOKEN_DELIMITER)) {
+            parser->currentToken = advanceParser(parser, sourceCode);
+            continue;
+        }
+
+        currentNode->left = parseStatement(parser, sourceCode);
+
+        // Opus Lexer guaranteed that the opening and closing brackets match
+        // Therefore we do not need to explicitly check if we could match the closing bracket
+        // Once the expression be parsed, the current token is guaranteed to be a closing bracket
+        // We comsume it without checking
+        if (!matchTokenType(parser, TOKEN_CLOSING_CURLY_BRACKET)) {
+            currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
+            currentNode = currentNode->right;
+        }
+
+        else {
+            currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
+            parser->currentToken = advanceParser(parser, sourceCode);
+        }
+    }
+
+    return codeBlockNode;
+}
+
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode) {
     // Entry point for expression parsing, we start at the lowest precedence level (logical or)
     return parseLogicalOr(parser, sourceCode);
 }
 
 ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode) {
-// Where logical and has higher precedence than the logical or, so try to parse it first
+    // Where logical and has higher precedence than the logical or, so try to parse it first
     ASTNode *root = parseLogicalAnd(parser, sourceCode);
 
     // Try to match logical or 
@@ -446,22 +577,29 @@ void displayAST(ASTNode* node, int level) {
 
     // Display the node
     switch (node->nodeType) {
-        case AST_PROGRAM:                printf("AST_PROGRAM\n"); break;
-        case AST_VARIABLE_DECLARATION:   printf("AST_VARIABLE_DECLARATION (%s)\n", node->token->lexeme); break;
-        case AST_CONSTANT_DECLARATION:   printf("AST_CONSTANT_DECLARATION (%s)\n", node->token->lexeme); break;
-        case AST_IDENTIFIER:             printf("AST_IDENTIFIER (%s)\n", node->token->lexeme); break;
-        case AST_TYPE_ANNOTATION:        printf("AST_TYPE_ANNOTATION (%s)\n", node->token->lexeme); break;
-        case AST_ASSIGNMENT_STATEMENT:   printf("AST_ASSIGNMENT (%s)\n", node->token->lexeme); break;
-        case AST_LITERAL:                printf("AST_LITERAL (%s)\n", node->token->lexeme); break;
-        case AST_BOOLEAN_LITERAL:        printf("AST_BOOLEAN_LITERAL (%s)\n", node->token->lexeme); break;
-        case AST_BINARY_EXPRESSION:      printf("AST_BINARY_EXPRESSION (%s)\n", node->token->lexeme); break;
-        case AST_UNARY_EXPRESSION:       printf("AST_UNARY_EXPRESSION (%s)\n", node->token->lexeme); break;
-        case AST_POSTFIX_EXPRESSION:     printf("AST_POSTFIX_EXPRESSION (%s)\n", node->token->lexeme); break;
-        case AST_FUNCTION_CALL:          printf("AST_FUNCTION_CALL\n"); break;
-        case AST_ARGUMENT:               printf("AST_ARGUMENT\n"); break;
-        case AST_ARGUMENT_LABEL:         printf("AST_ARGUMENT_LABEL (%s)\n", node->token->lexeme); break;
-        case AST_ARGUMENT_LIST:          printf("AST_ARGUMENT_LIST\n"); break;
-        default:                         printf("UNKNOWN NODE\n"); break;
+        case AST_PROGRAM:                   printf("AST_PROGRAM\n"); break;
+        case AST_VARIABLE_DECLARATION:      printf("AST_VARIABLE_DECLARATION (%s)\n", node->token->lexeme); break;
+        case AST_CONSTANT_DECLARATION:      printf("AST_CONSTANT_DECLARATION (%s)\n", node->token->lexeme); break;
+        case AST_IDENTIFIER:                printf("AST_IDENTIFIER (%s)\n", node->token->lexeme); break;
+        case AST_TYPE_ANNOTATION:           printf("AST_TYPE_ANNOTATION (%s)\n", node->token->lexeme); break;
+        case AST_ASSIGNMENT_STATEMENT:      printf("AST_ASSIGNMENT (%s)\n", node->token->lexeme); break;
+        case AST_LITERAL:                   printf("AST_LITERAL (%s)\n", node->token->lexeme); break;
+        case AST_BOOLEAN_LITERAL:           printf("AST_BOOLEAN_LITERAL (%s)\n", node->token->lexeme); break;
+        case AST_BINARY_EXPRESSION:         printf("AST_BINARY_EXPRESSION (%s)\n", node->token->lexeme); break;
+        case AST_UNARY_EXPRESSION:          printf("AST_UNARY_EXPRESSION (%s)\n", node->token->lexeme); break;
+        case AST_POSTFIX_EXPRESSION:        printf("AST_POSTFIX_EXPRESSION (%s)\n", node->token->lexeme); break;
+        case AST_FUNCTION_CALL:             printf("AST_FUNCTION_CALL\n"); break;
+        case AST_ARGUMENT:                  printf("AST_ARGUMENT\n"); break;
+        case AST_ARGUMENT_LABEL:            printf("AST_ARGUMENT_LABEL (%s)\n", node->token->lexeme); break;
+        case AST_ARGUMENT_LIST:             printf("AST_ARGUMENT_LIST\n"); break;
+        case AST_FUNCTION_DEFINITION:       printf("AST_FUNCTION_DEFINITION (%s)\n", node->token->lexeme); break;
+        case AST_FUNCTION_SIGNATURE:        printf("AST_FUNCTION_SIGNATURE\n"); break;
+        case AST_PARAMETER_LIST:            printf("AST_PARAMETER_LIST\n"); break;
+        case AST_PARAMETER_LABEL:           printf("AST_PARAMETER_LABEL (%s)\n", node->token->lexeme); break;
+        case AST_FUNCTION_RETURN_TYPE:      printf("AST_FUNCTION_RETURN_TYPE (%s)\n", node->token->lexeme); break;
+        case AST_FUNCTION_IMPLEMENTATION:   printf("AST_FUNCTION_IMPLEMENTATION\n"); break;
+        case AST_CODE_BLOCK:                printf("AST_CODE_BLOCK\n"); break;
+        default:                            printf("UNKNOWN NODE\n"); break;
     }
 
     if (node->left) displayAST(node->left, level + 1);
@@ -477,21 +615,29 @@ void reportParseError(Parser *parser) {
 
     switch (parser->parseError) {
         case PARSE_ERROR_MISSING_IDENTIFIER:
-            printf("[ERROR] Expecting an name for the variable after '%s'\n", token->lexeme); break;
+            printf("[ERROR] Expecting a name for the variable after '%s'.\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_ANNOTATION:
-            printf("[ERROR] Expecting ':' for the type annotation after '%s'\n", token->lexeme); break;
+            printf("[ERROR] Expecting ':' for the type annotation after '%s'.\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_NAME:
-            printf("[ERROR] Expecting a type name after ':'\n"); break;
+            printf("[ERROR] Expecting a type name after ':'.\n"); break;
         case PARSE_ERROR_DECLARATION_SYNTAX:
-            printf("[ERROR] Expecting '=' or a newline after '%s'\n", token->lexeme); break;
+            printf("[ERROR] Expecting '=' or a newline after '%s'.\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_RIGHT_VALUE:
-            printf("[ERROR] Expecting something to be assigned to '%s' after '='\n", token->lexeme); break;
+            printf("[ERROR] Expecting something to be assigned to '%s' after '='.\n", token->lexeme); break;
         case PARSE_ERROR_UNRESOLVABLE:
-            printf("[ERROR] Unresolvable token after '%s'\n", token->lexeme); break;
+            printf("[ERROR] Unresolvable token after '%s'\n.", token->lexeme); break;
         case PARSE_ERROR_MISSING_ARGUMENT_LABEL:
             printf("[ERROR] Expecting label for argument %s in the function call.\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_COLON_AFTER_LABEL:
-            printf("[ERROR] Expecting ':' after the label '%s'", token->lexeme); break;
+            printf("[ERROR] Expecting ':' after the label '%s'.\n", token->lexeme); break;
+        case PARSE_ERROR_MISSING_FUNCTION_NAME:
+            printf("[ERROR] Expecting a name for the function after '%s'.\n", token->lexeme); break;
+        case PARSE_ERROR_MISSING_OPENING_BRACKET:
+            printf("[ERROR] Expecting '(' for defining parameter list after '%s'.\n", token->lexeme); break;
+        case PARSE_ERROR_MISSING_RIGHT_ARROW:
+            printf("[ERROR] Expecting '->' after ')' for function return type annotation.\n"); break;
+        case PARSE_ERROR_MISSING_RETURN_TYPE:
+            printf("[ERROR] Expecting a type name after '->'.\n"); break;
         default:
             printf("[ERROR] Unable to generate diagnostic information...\n");
     }
