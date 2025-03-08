@@ -314,7 +314,6 @@ ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
     // Therefore we do not need to explicitly check if we could match the closing bracket
     // Once the expression be parsed, the current token is guaranteed to be a closing bracket
     // We comsume the closing curly bracket without checking
-    currentNode->right = initASTNode(AST_CODE_BLOCK, NULL);
     parser->currentToken = advanceParser(parser, sourceCode);
 
     return codeBlockNode;
