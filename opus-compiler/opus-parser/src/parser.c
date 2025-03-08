@@ -50,6 +50,9 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
     // Try to parse return statement for the function body
     else if (matchTokenType(parser, TOKEN_KEYWORD_RETURN)) return parseReturnStatement(parser, sourceCode);
 
+    // Try to parse conditional statement
+    else if (matchTokenType(parser, TOKEN_KEYWORD_IF)) return parseConditionalStatement(parser, sourceCode);
+
     // Try to parse an primary expression 
     else if (matchTokenType(parser, TOKEN_IDENTIFIER) || matchTokenType(parser, TOKEN_NUMERIC) ||
         matchTokenType(parser, TOKEN_STRING_LITERAL) || matchTokenType(parser, TOKEN_ARITHMETIC_SUBTRACTION) ||
@@ -327,15 +330,15 @@ ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
 ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_RETURN_STATEMENT, parser->currentToken);
 
-    // Consume the 'return' keyword.
+    // Consume the 'return' keyword
     parser->currentToken = advanceParser(parser, sourceCode);
     
-    // Optionally parse a return expression if the next token is not a delimiter.
+    // Optionally parse a return expression if the next token is not a delimiter
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
         root->left = parseExpression(parser, sourceCode);
     }
     
-    // Expect a delimiter to terminate the return statement.
+    // Expect a delimiter to terminate the return statement
     if (!matchTokenType(parser, TOKEN_DELIMITER)) {
         parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
         parser->diagnosticToken = root->token;
@@ -343,9 +346,66 @@ ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode) {
         exit(1);
     }
     
-    // Consume the delimiter.
+    // Consume the delimiter
     parser->currentToken = advanceParser(parser, sourceCode);
     return root;
+}
+
+ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode) {
+    ASTNode *conditionalStatementNode = initASTNode(AST_CONDITIONAL_STATEMENT, parser->currentToken);
+
+    // Consume 'if' keyword token
+    parser->currentToken = advanceParser(parser, sourceCode);
+    
+    // Parse the condition expression
+    ASTNode *conditionNode = parseExpression(parser, sourceCode);
+
+    // Expect an opening curly bracket for the conditional statement body
+    if (!matchTokenType(parser, TOKEN_OPENING_CURLY_BRACKET)) {
+        parser->parseError = PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET;
+        parser->diagnosticToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    ASTNode *codeBlockNode = parseCodeBlock(parser, sourceCode);
+    ASTNode *statementBodyNode = initASTNode(AST_CONDITIONAL_BODY, NULL);
+
+    statementBodyNode->left = codeBlockNode;
+    statementBodyNode->right = NULL;
+
+    conditionalStatementNode->left = conditionNode;
+    conditionalStatementNode->right = statementBodyNode;
+
+    // Skip delimiters if any, since newline characters between an if-else closure are whitespaces
+    while (matchTokenType(parser, TOKEN_DELIMITER)) {
+        parser->currentToken = advanceParser(parser, sourceCode);
+    }
+
+    // Check if there is an else statement
+    if (matchTokenType(parser, TOKEN_KEYWORD_ELSE)) {
+        // Consume the 'else' keyword token 
+        parser->currentToken = advanceParser(parser, sourceCode);
+
+        // Handle an 'else if' clause recursively
+        if (matchTokenType(parser, TOKEN_KEYWORD_IF)) {
+            statementBodyNode->right = parseConditionalStatement(parser, sourceCode);
+        }
+
+        // Otherwise, expect an else-block
+        else {
+            if (!matchTokenType(parser, TOKEN_OPENING_CURLY_BRACKET)) {
+                parser->parseError = PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET;
+                parser->diagnosticToken = parser->currentToken;
+                reportParseError(parser);
+                exit(1);
+            }
+
+            statementBodyNode->right = parseCodeBlock(parser, sourceCode);
+        }
+    }
+
+    return conditionalStatementNode;
 }
 
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode) {
@@ -665,6 +725,8 @@ void displayAST(ASTNode* node, int level) {
         case AST_CODE_BLOCK:                printf("AST_CODE_BLOCK\n"); break;
         case AST_PARAMETER:                 printf("AST_PARAMETER\n"); break;
         case AST_RETURN_STATEMENT:          printf("AST_RETURN_STATEMENT (%s)\n", node->token->lexeme); break;
+        case AST_CONDITIONAL_STATEMENT:     printf("AST_CONDITIONAL_STATEMENT (%s)\n", node->token->lexeme); break;
+        case AST_CONDITIONAL_BODY:          printf("AST_CONDITIONAL_BODY\n"); break;
         default:                            printf("UNKNOWN NODE\n"); break;
     }
 
@@ -704,6 +766,8 @@ void reportParseError(Parser *parser) {
             printf("[ERROR] Expecting '->' after ')' for function return type annotation.\n"); break;
         case PARSE_ERROR_MISSING_RETURN_TYPE:
             printf("[ERROR] Expecting a type name after '->'.\n"); break;
+        case PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET:
+            printf("[ERROR] Expecting '{' to provide a body for the statement.\n"); break;
         default:
             printf("[ERROR] Unable to generate diagnostic information...\n");
     }

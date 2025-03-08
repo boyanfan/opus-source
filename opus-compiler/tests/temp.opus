@@ -1,3 +1,5 @@
-func greeting() -> String {
-    return "Hello!"
-}
+if (true) {
+    return 42
+} 
+
+var a: Int = 4
