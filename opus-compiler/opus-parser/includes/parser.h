@@ -135,11 +135,73 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *leftValue);
 
+/// Parses a function definition in the Opus programming language.
+///
+/// This function handles function definitions, which include the function signature and optional body.
+/// It follows the grammar:
+///
+///     FunctionDefinition -> "func" Identifier "(" ParameterList? ")" "->" ReturnType
+///
+/// The resulting AST structure for a function definition ("func greeting() -> String") will be:
+///
+///     ├── AST_FUNCTION_DEFINITION (func)
+///     │   ├── AST_IDENTIFIER (greeting)
+///     │   ├── AST_FUNCTION_SIGNATURE
+///     │   │   ├── AST_PARAMETER_LIST
+///     │   │   ├── AST_FUNCTION_RETURN_TYPE (String)
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed function definition, or NULL if a parsing error occurs.
+///
 ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode);
 
+/// Parses a parameter list for a function in the Opus programming language.
+///
+/// This function parses the parameters for a function definition and builds the AST for the parameter list.
+/// It follows the grammar:
+///
+///     ParameterList -> LabeledParameter (',' LabeledParameter)*
+///     LabeledParameter -> Identifier ':' Type
+///
+/// The resulting AST structure will be:
+///
+/// AST_PARAMETER_LIST
+///    ├── AST_PARAMETER
+///    │   ├── AST_PARAMETER_LABEL (firstArg)
+///    │   ├── AST_TYPE_ANNOTATION (Int)
+///    ├── AST_PARAMETER_LIST
+///    │   ├── AST_PARAMETER
+///    │   │   ├── AST_PARAMETER_LABEL (secondArg)
+///    │   │   ├── AST_TYPE_ANNOTATION (String)
+///    │   ├── AST_PARAMETER_LIST
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed parameter list.
+///
 ASTNode *parseParameterList(Parser *parser, FILE *sourceCode);
 
+/// Parses a code block in the Opus programming language.
+///
+/// This function handles the parsing of statements inside a block, typically between opening and closing
+/// curly braces (`{}`), and constructs the AST for the block. It follows the grammar:
+///
+///     CodeBlock -> '{' Statement '}'
+///
+/// The resulting AST structure for a code block will be:
+///
+///     AST_CODE_BLOCK
+///         ├── AST_STATEMENT
+///         ├── AST_CODE_BLOCK
+/// 
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed code block.
+///
 ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode);
+
+ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode);
 
 /// Parses an expression in the Opus programming language.
 ///

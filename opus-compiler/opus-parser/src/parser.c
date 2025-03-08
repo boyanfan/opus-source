@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
+#include "ast.h"
+#include "token.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -44,6 +46,9 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
 
     // Try to parse function definition statement 
     else if (matchTokenType(parser, TOKEN_KEYWORD_FUNC)) return parseFunctionDefinition(parser, sourceCode); 
+
+    // Try to parse return statement for the function body
+    else if (matchTokenType(parser, TOKEN_KEYWORD_RETURN)) return parseReturnStatement(parser, sourceCode);
 
     // Try to parse an primary expression 
     else if (matchTokenType(parser, TOKEN_IDENTIFIER) || matchTokenType(parser, TOKEN_NUMERIC) ||
@@ -319,6 +324,30 @@ ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode) {
     return codeBlockNode;
 }
 
+ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode) {
+    ASTNode *root = initASTNode(AST_RETURN_STATEMENT, parser->currentToken);
+
+    // Consume the 'return' keyword.
+    parser->currentToken = advanceParser(parser, sourceCode);
+    
+    // Optionally parse a return expression if the next token is not a delimiter.
+    if (!matchTokenType(parser, TOKEN_DELIMITER)) {
+        root->left = parseExpression(parser, sourceCode);
+    }
+    
+    // Expect a delimiter to terminate the return statement.
+    if (!matchTokenType(parser, TOKEN_DELIMITER)) {
+        parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
+        parser->diagnosticToken = root->token;
+        reportParseError(parser);
+        exit(1);
+    }
+    
+    // Consume the delimiter.
+    parser->currentToken = advanceParser(parser, sourceCode);
+    return root;
+}
+
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode) {
     // Entry point for expression parsing, we start at the lowest precedence level (logical or)
     return parseLogicalOr(parser, sourceCode);
@@ -514,7 +543,7 @@ ASTNode* parseFunctionCall(Parser *parser, FILE *sourceCode, ASTNode* callee) {
 ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
     // Each argument must be labeled, so try to match the first labeled argument 
     if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
-parser->parseError = PARSE_ERROR_MISSING_ARGUMENT_LABEL;
+        parser->parseError = PARSE_ERROR_MISSING_ARGUMENT_LABEL;
         parser->diagnosticToken = parser->currentToken;
         reportParseError(parser);
         exit(1);
@@ -635,6 +664,7 @@ void displayAST(ASTNode* node, int level) {
         case AST_FUNCTION_IMPLEMENTATION:   printf("AST_FUNCTION_IMPLEMENTATION\n"); break;
         case AST_CODE_BLOCK:                printf("AST_CODE_BLOCK\n"); break;
         case AST_PARAMETER:                 printf("AST_PARAMETER\n"); break;
+        case AST_RETURN_STATEMENT:          printf("AST_RETURN_STATEMENT (%s)\n", node->token->lexeme); break;
         default:                            printf("UNKNOWN NODE\n"); break;
     }
 

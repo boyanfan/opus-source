@@ -36,6 +36,7 @@ typedef enum {
     AST_PARAMETER_LABEL,           /// The label of the parameter.
     AST_FUNCTION_RETURN_TYPE,      /// Function return type (e.g. "-> Bool").
     AST_CODE_BLOCK,                /// A code block (e.g. "{...}").
+    AST_RETURN_STATEMENT,          /// Return statement for the function body.
 } ASTNodeType;
 
 /// AST Node structure for the abstract syntax tree.

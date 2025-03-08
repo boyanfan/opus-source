@@ -1,5 +1,3 @@
-func greeting(target: String, times: Int) -> String {
-    var number: Int = times
+func greeting() -> String {
+    return "Hello!"
 }
-
-greeting(target: "Boyan Fan", times: 42)
