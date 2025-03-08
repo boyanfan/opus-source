@@ -85,7 +85,7 @@ int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode);
 int locateStartOfNextLine(Lexer *lexer, FILE *sourceCode);
 ```
 
-If a literal are successfully lexed (means there is no token nor lexing error), lexer 
+If a literal is successfully lexed (means there is no token nor lexing error), lexer 
 calls `initSafeToken()` to return an error-free token with a specific token 
 type; if any error occurs, the lexer calls `initUnsafeToken()` to return a token 
 with a specific error type.
@@ -104,8 +104,8 @@ In these cases (between `(...)` or `[...]`), a newline character is not a delimi
 int isInClosure(Lexer *lexer);
 ```
 
-Closures are tracked by the lexer using a vector, where `[0]` are tracking brackets,
-`[1]` for curly brackets, and `[2]` for square brackets. Also, any unclosed brackets can be 
+Closures are tracked by the lexer using a vector, where `[0]` is tracking brackets,
+`[1]` for curly brackets, and `[2]` for square brackets. Therefore, any unclosed brackets can be 
 found if this vector does not equal to `0` and the end of the file.
 
 ```C
@@ -159,8 +159,8 @@ int skipCurrenToken(Lexer *lexer, FILE* sourceCode, char *lexeme, char *skippedS
 
 ### Design Considerations
 When designing the Opus programming language, one of the key decisions was
-whether to use a keyword-based primitive type system similar to C (e.g., int, float), 
-or to adopt a type identifier-based system like Swift (e.g., Int, Float). We ultimately 
+whether to use a keyword-based primitive type system similar to C (e.g., `int`, `float`), 
+or to adopt a type identifier-based system like Swift (e.g., `:Int`, `:Float`). We ultimately 
 chose the latter, so that both native types and user-defined types share the same type 
 annotation syntax.
 
