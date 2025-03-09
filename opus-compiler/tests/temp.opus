@@ -1,5 +1,3 @@
-if (true) {
-    return 42
-} 
-
-var a: Int = 4
+for number in numbers {
+    number = 42
+}

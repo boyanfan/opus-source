@@ -32,6 +32,8 @@ typedef enum {
     PARSE_ERROR_MISSING_RIGHT_ARROW,             /// A required right arrow is missing.
     PARSE_ERROR_MISSING_RETURN_TYPE,             /// A required return type is missing.
     PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET,   /// A required curly bracket is missing.
+    PARSE_ERROR_MISSING_UNTIL_CONDITION,         /// A required until condition is missing.
+    PARSE_ERROR_MISSING_IN_STATEMENT,            /// A required 'in' keyword is missing.
     PARSE_ERROR_UNRESOLVABLE,                    /// An unresolvable token occurred.
 } ParseError;
 
@@ -205,6 +207,10 @@ ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode);
 ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode);
 
 ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode);
+
+ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode);
+
+ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode);
 
 /// Parses an expression in the Opus programming language.
 ///

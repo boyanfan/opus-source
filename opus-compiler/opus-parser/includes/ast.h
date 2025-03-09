@@ -39,6 +39,9 @@ typedef enum {
     AST_RETURN_STATEMENT,          /// Return statement for the function body (e.g. "return 42").
     AST_CONDITIONAL_STATEMENT,     /// Conditional statement (e.g. "if").
     AST_CONDITIONAL_BODY,          /// The conditional statement body.
+    AST_REPEAT_UNTIL_STATEMENT,    /// The repeat-until loop statement.
+    AST_FOR_IN_STATEMENT,          /// For-in statement.
+    AST_FOR_IN_CONTEXT,            /// The element and the iterated expression.
 } ASTNodeType;
 
 /// AST Node structure for the abstract syntax tree.

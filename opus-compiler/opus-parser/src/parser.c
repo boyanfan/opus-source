@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "parser.h"
 #include "ast.h"
+#include "lexer.h"
 #include "token.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
@@ -53,6 +54,12 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
     // Try to parse conditional statement
     else if (matchTokenType(parser, TOKEN_KEYWORD_IF)) return parseConditionalStatement(parser, sourceCode);
 
+    // Try to parse repeat-until statement
+    else if (matchTokenType(parser, TOKEN_KEYWORD_REPEAT)) return parseRepeatUntilStatement(parser, sourceCode);
+
+    // Try to parse for-in statement
+    else if (matchTokenType(parser, TOKEN_KEYWORD_FOR)) return parseForInStatement(parser, sourceCode);
+    
     // Try to parse an primary expression 
     else if (matchTokenType(parser, TOKEN_IDENTIFIER) || matchTokenType(parser, TOKEN_NUMERIC) ||
         matchTokenType(parser, TOKEN_STRING_LITERAL) || matchTokenType(parser, TOKEN_ARITHMETIC_SUBTRACTION) ||
@@ -408,6 +415,102 @@ ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode) {
     return conditionalStatementNode;
 }
 
+ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode) {
+    ASTNode *repeatUntilStatementNode = initASTNode(AST_REPEAT_UNTIL_STATEMENT, parser->currentToken);
+
+    // Consume the 'repeat' keyword toekn
+    parser->currentToken = advanceParser(parser, sourceCode);
+    
+    // Try to mathc an opening curly bracket for the loop body.
+    if (!matchTokenType(parser, TOKEN_OPENING_CURLY_BRACKET)) {
+        parser->parseError = PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET;
+        parser->diagnosticToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    ASTNode *statementBodyNode = parseCodeBlock(parser, sourceCode);
+
+    // Skip delimiters if any, since newline characters between a repeat-until closure are whitespaces
+    while (matchTokenType(parser, TOKEN_DELIMITER)) {
+        parser->currentToken = advanceParser(parser, sourceCode);
+    }
+
+    // Try to match the 'until' keyword token
+    if (!matchTokenType(parser, TOKEN_KEYWORD_UNTIL)) {
+        parser->parseError = PARSE_ERROR_MISSING_UNTIL_CONDITION;
+        parser->diagnosticToken = parser->currentToken;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Consume the 'until' keyword toekn
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    repeatUntilStatementNode->left = parseExpression(parser, sourceCode);
+    repeatUntilStatementNode->right = statementBodyNode;
+
+    // Expect a delimiter to finish the repeat-until loop.
+    if (!matchTokenType(parser, TOKEN_DELIMITER) && !matchTokenType(parser, TOKEN_EOF)) {
+        parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
+        parser->diagnosticToken = repeatUntilStatementNode->right->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    parser->currentToken = advanceParser(parser, sourceCode);
+    return repeatUntilStatementNode;
+}
+
+ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode) {
+    ASTNode *forInStatementNode = initASTNode(AST_FOR_IN_STATEMENT, parser->currentToken);
+
+    // Consume the 'for' keyword token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the identifier for the loop variable
+    if (!matchTokenType(parser, TOKEN_IDENTIFIER)) {
+        parser->parseError = PARSE_ERROR_MISSING_IDENTIFIER;
+        parser->diagnosticToken = forInStatementNode->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    ASTNode *identifierNode = initASTNode(AST_IDENTIFIER, parser->currentToken);
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    // Try to match the 'in' keyword token
+    if (!matchTokenType(parser, TOKEN_KEYWORD_IN)) {
+        parser->parseError = PARSE_ERROR_MISSING_IN_STATEMENT;
+        parser->diagnosticToken = identifierNode->token;
+        reportParseError(parser);
+        exit(1);
+    }
+
+    // Consume 'in' keyword token
+    parser->currentToken = advanceParser(parser, sourceCode);
+
+    ASTNode *iterableNode = parseExpression(parser, sourceCode);
+
+    // Expect an opening curly bracket for the loop body.
+    if (!matchTokenType(parser, TOKEN_OPENING_CURLY_BRACKET)) {
+        parser->parseError = PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET;
+        parser->diagnosticToken = iterableNode->token;
+        reportParseError(parser);
+        exit(1);
+    }
+    
+    ASTNode *forInContextNode = initASTNode(AST_FOR_IN_CONTEXT, NULL);
+    forInContextNode->left = identifierNode;
+    forInContextNode->right = iterableNode;
+
+    ASTNode *statementBodyNode = parseCodeBlock(parser, sourceCode);
+    forInStatementNode->left = forInContextNode;
+    forInStatementNode->right = statementBodyNode;
+
+    return forInStatementNode;
+}
+
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode) {
     // Entry point for expression parsing, we start at the lowest precedence level (logical or)
     return parseLogicalOr(parser, sourceCode);
@@ -543,6 +646,13 @@ ASTNode *parsePrimary(Parser *parser, FILE *sourceCode) {
     else if (matchTokenType(parser, TOKEN_IDENTIFIER)) {
         ASTNode *root = initASTNode(AST_IDENTIFIER, parser->currentToken);
         parser->currentToken = advanceParser(parser, sourceCode);
+        
+        // Try if match assignment operator if there is an assignment statement after the declaration
+        if (matchTokenType(parser, TOKEN_ASSIGNMENT_OPERATOR)) { 
+            // The root now should be an assignment statement and the declaration is its left value
+            return parseAssignmentStatement(parser, sourceCode, root);
+        }
+
         return root;
     } 
 
@@ -727,6 +837,9 @@ void displayAST(ASTNode* node, int level) {
         case AST_RETURN_STATEMENT:          printf("AST_RETURN_STATEMENT (%s)\n", node->token->lexeme); break;
         case AST_CONDITIONAL_STATEMENT:     printf("AST_CONDITIONAL_STATEMENT (%s)\n", node->token->lexeme); break;
         case AST_CONDITIONAL_BODY:          printf("AST_CONDITIONAL_BODY\n"); break;
+        case AST_REPEAT_UNTIL_STATEMENT:    printf("AST_REPEAT_UNTIL_STATEMENT (%s)\n", node->token->lexeme); break;
+        case AST_FOR_IN_STATEMENT:          printf("AST_FOR_IN_STATEMENT (%s)\n", node->token->lexeme); break;
+        case AST_FOR_IN_CONTEXT:            printf("AST_FOR_IN_CONTEXT\n"); break;
         default:                            printf("UNKNOWN NODE\n"); break;
     }
 
@@ -743,7 +856,7 @@ void reportParseError(Parser *parser) {
 
     switch (parser->parseError) {
         case PARSE_ERROR_MISSING_IDENTIFIER:
-            printf("[ERROR] Expecting a name for the variable after '%s'.\n", token->lexeme); break;
+            printf("[ERROR] Expecting a name for the variable/constant after '%s'.\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_ANNOTATION:
             printf("[ERROR] Expecting ':' for the type annotation after '%s'.\n", token->lexeme); break;
         case PARSE_ERROR_MISSING_TYPE_NAME:
@@ -768,6 +881,10 @@ void reportParseError(Parser *parser) {
             printf("[ERROR] Expecting a type name after '->'.\n"); break;
         case PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET:
             printf("[ERROR] Expecting '{' to provide a body for the statement.\n"); break;
+        case PARSE_ERROR_MISSING_UNTIL_CONDITION:
+            printf("[ERROR] Expecting 'until' to provide a termination condition.\n"); break;
+        case PARSE_ERROR_MISSING_IN_STATEMENT:
+            printf("[ERROR] Expecting 'in' to provide an Iterable after '%s'.\n", token->lexeme); break;
         default:
             printf("[ERROR] Unable to generate diagnostic information...\n");
     }
