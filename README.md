@@ -20,7 +20,7 @@ cmake --build .
 Once built, you can run Opus to compile a specific Opus source file (`.opus` files). 
 For example, the following command compiles `correct.opus` from `test` folder.
 ```shell
-./Opus ../tests/arithmetic.opus
+./Opus ../tests/phase-2/function.opus
 ```
 You can always open an `.opus` file using any text editor or IDEs. Now it is time to start 
 writing your own Opus codes! Create a plain text file, write codes that confirms the grammar
