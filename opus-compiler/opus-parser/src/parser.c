@@ -3,7 +3,6 @@
 // Created by Boyan Fan, 2025/03/02 
 //
 
-#include <_ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
@@ -581,27 +580,8 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode) {
 }
 
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode) {
-    // Entry point for expression parsing, we start at the lowest precedence level (logical or)
-    return parseLogicalEquivalence(parser, sourceCode);
-}
-
-ASTNode *parseLogicalEquivalence(Parser *parser, FILE *sourceCode) {
-    // Where logical or has higher precedence than the logical equivalence, so try to parse it first
-    ASTNode *root = parseLogicalOr(parser, sourceCode);
-
-    // Try to match logical equivalence 
-    while (matchTokenType(parser, TOKEN_LOGICAL_EQUIVALENCE)) {
-        ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
-
-        // Comsume the current operator token ('==')
-        parser->currentToken = advanceParser(parser, sourceCode);
-
-        binaryNode->left = root;
-        binaryNode->right = parseLogicalOr(parser, sourceCode);
-        root = binaryNode;
-    }
-
-    return root;
+    // Entry point for expression parsing, we start at the lowest precedence level (logical equivalence)
+    return parseLogicalOr(parser, sourceCode);
 }
 
 ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode) {
@@ -624,13 +604,39 @@ ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode) {
 }
 
 ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode) {
-    ASTNode *root = parseAddition(parser, sourceCode);
+    ASTNode *root = parseRelation(parser, sourceCode);
 
     // Try to match logical and 
     while (matchTokenType(parser, TOKEN_LOGICAL_AND_OPERATOR)) {
         ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
 
         // Comsume the current operator token ('&&')
+        parser->currentToken = advanceParser(parser, sourceCode);
+
+        binaryNode->left = root;
+        binaryNode->right = parseRelation(parser, sourceCode);
+        root = binaryNode;
+    }
+
+    return root;
+}
+
+ASTNode *parseRelation(Parser *parser, FILE *sourceCode) {
+    // Where addition expressions have higher precedence than relational operators,
+    // so try to parse the addition expression first.
+    ASTNode *root = parseAddition(parser, sourceCode);
+
+    // Try to match any relational operator: '<', '>', '<=', '>='
+    while (matchTokenType(parser, TOKEN_LESS_THAN_OPERATOR)    ||
+           matchTokenType(parser, TOKEN_GREATER_THAN_OPERATOR) ||
+           matchTokenType(parser, TOKEN_LESS_OR_EQUAL_TO_OPERATOR)   ||
+           matchTokenType(parser, TOKEN_GREATER_OR_EQUAL_TO_OPERATOR) ||
+           matchTokenType(parser, TOKEN_LOGICAL_EQUIVALENCE) ||
+           matchTokenType(parser, TOKEN_NOT_EQUAL_TO_OPERATOR)) {
+
+        ASTNode *binaryNode = initASTNode(AST_BINARY_EXPRESSION, parser->currentToken);
+
+        // Consume the current operator token ('<', '>', '<=', or '>=')
         parser->currentToken = advanceParser(parser, sourceCode);
 
         binaryNode->left = root;

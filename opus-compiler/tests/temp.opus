@@ -1,2 +1,1 @@
-print(content:)
-let name: String 
+42 >= 3.14 + 1

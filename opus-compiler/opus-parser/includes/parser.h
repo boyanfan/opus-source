@@ -311,8 +311,6 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode);
 
-ASTNode *parseLogicalEquivalence(Parser *parser, FILE *sourceCode);
-
 /// Parses a logical OR expression in the Opus programming language.
 ///
 /// This function handles logical OR operations (`||`) and constructs an AST node
@@ -340,7 +338,7 @@ ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode);
 /// precedence by deferring to lower precedence expressions. The function follows
 /// the grammar:
 ///
-///     LogicalAnd -> Addition "&&" Addition
+///     LogicalAnd -> Relation "&&" Relation
 ///
 /// The resulting AST structure will be:
 ///
@@ -355,6 +353,31 @@ ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode);
 /// @return A pointer to the ASTNode representing the parsed logical AND expression.
 ///
 ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode);
+
+/// Parses a relational expression ('>', '<', '>=', '<=', '==' and '!=').
+///
+/// This function parses relational expressions that compare two operands 
+/// using relational operators (`>`, `<`, `>=`, `<=`). It constructs and 
+/// returns an `ASTNode` representing the relational operation in the 
+/// abstract syntax tree (AST). The function follows the grammar:
+///
+///     Relational -> Addition (">" | "<" | ">=" | "<=" | "==" | "!=") Addition
+///
+/// The resulting AST structure for "42 >= 3.14 + 1" will be:
+///
+///     AST_PROGRAM
+///     ├── AST_BINARY_EXPRESSION (>=)
+///     │   ├── AST_LITERAL (42)
+///     │   ├── AST_BINARY_EXPRESSION (+)
+///     │   │   ├── AST_LITERAL (3.14)
+///     │   │   ├── AST_LITERAL (1)
+///     ├── AST_PROGRAM
+/// 
+/// @param parser Pointer to the `Parser` structure maintaining the current parsing state.
+/// @param sourceCode The file pointer to the source code being parsed, used for token advancement.
+/// @return A pointer to an `ASTNode` representing the parsed relational expression.
+///
+ASTNode *parseRelation(Parser *parser, FILE *sourceCode);
 
 /// Parses an addition or subtraction expression in the Opus programming language.
 ///
