@@ -67,7 +67,7 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 }
@@ -86,7 +86,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
         parser->parseError = PARSE_ERROR_MISSING_IDENTIFIER;
         parser->diagnosticToken = root->token;
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -102,7 +102,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = identifierNode->token;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -114,7 +114,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
         parser->parseError = PARSE_ERROR_MISSING_TYPE_NAME;
         parser->diagnosticToken = parser->currentToken;
         reportParseError(parser);        
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -145,7 +145,7 @@ ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
         parser->parseError = PARSE_ERROR_MISSING_DELIMITER;
         parser->diagnosticToken = typeAnnotationNode->token;
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 }
@@ -166,7 +166,7 @@ ASTNode *parseAssignmentStatement(Parser *parser, FILE *sourceCode, ASTNode *lef
         parser->diagnosticToken = root->right->token;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -188,7 +188,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = functionDefinitionNode->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -203,7 +203,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = functionDefinitionNode->left->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -228,7 +228,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL); 
     }
     
@@ -241,7 +241,7 @@ ASTNode *parseFunctionDefinition(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -274,7 +274,7 @@ ASTNode *parseParameterList(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -290,7 +290,7 @@ ASTNode *parseParameterList(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parameterLabelNode->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -302,7 +302,7 @@ ASTNode *parseParameterList(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -370,7 +370,7 @@ ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = root->left->token;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
     
@@ -391,7 +391,7 @@ ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = conditionalStatementNode->token;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
     
@@ -404,7 +404,7 @@ ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -439,7 +439,7 @@ ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode) {
                 parser->diagnosticToken = parser->currentToken;
                 
                 reportParseError(parser);
-                escapeParserError(parser, sourceCode);
+                escapeParseError(parser, sourceCode);
                 return initASTNode(AST_ERROR, NULL);
             }
 
@@ -462,7 +462,7 @@ ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -479,7 +479,7 @@ ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -491,7 +491,7 @@ ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -504,7 +504,7 @@ ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = repeatUntilStatementNode->left->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -524,7 +524,7 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = forInStatementNode->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -537,7 +537,7 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = identifierNode->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -549,7 +549,7 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -561,7 +561,7 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = iterableNode->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
     
@@ -773,7 +773,7 @@ ASTNode *parsePrimary(Parser *parser, FILE *sourceCode) {
     parser->diagnosticToken = parser->currentToken;
 
     reportParseError(parser);
-    escapeParserError(parser, sourceCode);
+    escapeParseError(parser, sourceCode);
     return initASTNode(AST_ERROR, NULL);
 }
 
@@ -810,7 +810,7 @@ ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -826,7 +826,7 @@ ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = argumentLabelNode->token;
         
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -838,7 +838,7 @@ ASTNode* parseArgumentList(Parser *parser, FILE *sourceCode) {
         parser->diagnosticToken = parser->currentToken;
 
         reportParseError(parser);
-        escapeParserError(parser, sourceCode);
+        escapeParseError(parser, sourceCode);
         return initASTNode(AST_ERROR, NULL);
     }
 
@@ -867,7 +867,7 @@ Token *advanceParser(Parser *parser, FILE *sourceCode) {
     return getNextToken(parser->lexer, sourceCode); 
 } 
 
-void escapeParserError(Parser *parser, FILE *sourceCode) {
+void escapeParseError(Parser *parser, FILE *sourceCode) {
     while (!matchTokenType(parser, TOKEN_DELIMITER) && !matchTokenType(parser, TOKEN_EOF)) {
         parser->currentToken = advanceParser(parser, sourceCode);
     }

@@ -100,7 +100,7 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode);
 /// It constructs an Abstract Syntax Tree (AST) node representing the variable declaration.
 /// The resulting AST structure will be:
 ///
-///     AST_VAR_DECL ("var" or "let")
+///     AST_VARIABLE_DECLARATION ("var" or "let")
 ///         ├── AST_IDENTIFIER ("variable_name")
 ///         └── AST_TYPE ("type_name")
 ///
@@ -556,7 +556,7 @@ Token *advanceParser(Parser *parser, FILE *sourceCode);
 /// @param parser Pointer to the `Parser` structure, which maintains the current parsing state.
 /// @param sourceCode The file pointer to the source code being parsed, used for fetching new tokens.
 ///
-void escapeParserError(Parser *parser, FILE *sourceCode);
+void escapeParseError(Parser *parser, FILE *sourceCode);
 
 /// Reports the current parsing error with diagnostic information.
 /// @param parser Pointer to the Parser instance.
