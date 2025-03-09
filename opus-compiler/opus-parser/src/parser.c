@@ -604,7 +604,7 @@ ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode) {
 }
 
 ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode) {
-    ASTNode *root = parseRelation(parser, sourceCode);
+    ASTNode *root = parseComparison(parser, sourceCode);
 
     // Try to match logical and 
     while (matchTokenType(parser, TOKEN_LOGICAL_AND_OPERATOR)) {
@@ -614,14 +614,14 @@ ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode) {
         parser->currentToken = advanceParser(parser, sourceCode);
 
         binaryNode->left = root;
-        binaryNode->right = parseRelation(parser, sourceCode);
+        binaryNode->right = parseComparison(parser, sourceCode);
         root = binaryNode;
     }
 
     return root;
 }
 
-ASTNode *parseRelation(Parser *parser, FILE *sourceCode) {
+ASTNode *parseComparison(Parser *parser, FILE *sourceCode) {
     // Where addition expressions have higher precedence than relational operators,
     // so try to parse the addition expression first.
     ASTNode *root = parseAddition(parser, sourceCode);

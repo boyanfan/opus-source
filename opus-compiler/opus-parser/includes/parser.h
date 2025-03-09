@@ -338,7 +338,7 @@ ASTNode *parseLogicalOr(Parser *parser, FILE *sourceCode);
 /// precedence by deferring to lower precedence expressions. The function follows
 /// the grammar:
 ///
-///     LogicalAnd -> Relation "&&" Relation
+///     LogicalAnd -> Comparison "&&" Comparison
 ///
 /// The resulting AST structure will be:
 ///
@@ -377,7 +377,7 @@ ASTNode *parseLogicalAnd(Parser *parser, FILE *sourceCode);
 /// @param sourceCode The file pointer to the source code being parsed, used for token advancement.
 /// @return A pointer to an `ASTNode` representing the parsed relational expression.
 ///
-ASTNode *parseRelation(Parser *parser, FILE *sourceCode);
+ASTNode *parseComparison(Parser *parser, FILE *sourceCode);
 
 /// Parses an addition or subtraction expression in the Opus programming language.
 ///

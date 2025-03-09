@@ -1,0 +1,10 @@
+// Function definition without implementation
+func greeting() -> String
+
+// Function definition with implementation
+func getLeftHandSide(lhs: Int, rhs: Int) -> Int {
+    return lhs
+}
+
+// Call a function with parameters
+let leftHandSide: Int = getLeftHandSide(lhs: 10, rhs: 20)

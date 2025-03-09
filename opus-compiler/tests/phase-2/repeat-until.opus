@@ -1,0 +1,4 @@
+var number: Int = 0
+repeat {
+    number = number + 1
+} until number == 10

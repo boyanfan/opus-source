@@ -1,0 +1,6 @@
+// Variable declaration without assignment statement
+var date: Date
+
+// Variable declaration with assignment statement
+var assignmentGrade: Int = 100
+let name: String = "Boyan Fan"
