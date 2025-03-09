@@ -42,6 +42,7 @@ typedef enum {
     AST_REPEAT_UNTIL_STATEMENT,    /// The repeat-until loop statement.
     AST_FOR_IN_STATEMENT,          /// For-in statement.
     AST_FOR_IN_CONTEXT,            /// The element and the iterated expression.
+    AST_ERROR,                     /// The error node for panic mode recovery.
 } ASTNodeType;
 
 /// AST Node structure for the abstract syntax tree.

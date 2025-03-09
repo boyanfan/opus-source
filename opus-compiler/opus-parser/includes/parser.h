@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "lexer.h"
+#include "token.h"
 
 /// Error codes for parsing.
 typedef enum {
@@ -34,7 +35,10 @@ typedef enum {
     PARSE_ERROR_MISSING_OPENING_CURLY_BRACKET,   /// A required curly bracket is missing.
     PARSE_ERROR_MISSING_UNTIL_CONDITION,         /// A required until condition is missing.
     PARSE_ERROR_MISSING_IN_STATEMENT,            /// A required 'in' keyword is missing.
+    PARSE_ERROR_MISSING_CONDITION,               /// A required condition for the statement is missing.
     PARSE_ERROR_UNRESOLVABLE,                    /// An unresolvable token occurred.
+    PARSE_ERROR_MISSING_OPERAND,                 /// A required operand is missing.
+    PARSE_ERROR_MISSING_ARGUMENT,                /// A required argument is missing.
 } ParseError;
 
 /// The parser for the Opus programming language.
@@ -307,6 +311,8 @@ ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseExpression(Parser *parser, FILE *sourceCode);
 
+ASTNode *parseLogicalEquivalence(Parser *parser, FILE *sourceCode);
+
 /// Parses a logical OR expression in the Opus programming language.
 ///
 /// This function handles logical OR operations (`||`) and constructs an AST node
@@ -520,10 +526,32 @@ int matchTokenType(Parser *parser, TokenType type);
 ///
 Token *advanceParser(Parser *parser, FILE *sourceCode); 
 
+/// Skips tokens until a delimiter is encountered, enabling error recovery.
+/// This function advances the parser until a `TOKEN_DELIMITER` is found, 
+/// allowing parsing to resume at a safe synchronization point. It is typically 
+/// used for error recovery to prevent cascading errors caused by unexpected tokens.
+/// 
+/// @param parser Pointer to the `Parser` structure, which maintains the current parsing state.
+/// @param sourceCode The file pointer to the source code being parsed, used for fetching new tokens.
+///
+void escapeParserError(Parser *parser, FILE *sourceCode);
+
 /// Reports the current parsing error with diagnostic information.
 /// @param parser Pointer to the Parser instance.
 ///
 void reportParseError(Parser *parser);
+
+/// Checks if the current token represents the start of an expression.
+///
+/// This function determines whether the parser's current token can begin 
+/// an expression. Expressions can start with identifiers, numeric literals, 
+/// string literals, unary operators (`-`, `!`), opening brackets `(` for 
+/// grouping, or boolean keywords (`true`, `false`).
+///
+/// @param parser Pointer to the `Parser` structure containing the current parsing state.
+/// @return `1` (True) if the current token can start an expression, otherwise `0` (False).
+///
+int isExpression(Parser *parser);
 
 /// Initializes a new parser instance.
 /// @return Pointer to a newly allocated Parser instance, or NULL if memory allocation fails.
