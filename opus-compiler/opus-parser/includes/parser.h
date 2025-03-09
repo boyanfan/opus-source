@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "lexer.h"
-#include "token.h"
 
 /// Error codes for parsing.
 typedef enum {

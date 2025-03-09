@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "parser.h"
-#include "ast.h"
-#include "lexer.h"
-#include "token.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
