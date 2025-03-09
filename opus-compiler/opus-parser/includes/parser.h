@@ -204,12 +204,93 @@ ASTNode *parseParameterList(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseCodeBlock(Parser *parser, FILE *sourceCode);
 
+/// Parses a return statement in the Opus programming language.
+///
+/// This function handles return statements, which optionally include an expression.
+/// It follows the grammar:
+///
+///     ReturnStatement -> "return" Expression? Delimiter
+///
+/// The resulting AST structure for a return statement ("return 1 + 2") will be:
+/// 
+///     AST_PROGRAM
+///     ├── AST_RETURN_STATEMENT (return)
+///     │   ├── AST_BINARY_EXPRESSION (+)
+///     │   │   ├── AST_LITERAL (1)
+///     │   │   ├── AST_LITERAL (2)
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed return statement.
+///
 ASTNode *parseReturnStatement(Parser *parser, FILE *sourceCode);
 
+/// Parses a conditional statement (if-else) in the Opus programming language.
+///
+/// This function handles `if` statements with optional `else if` and `else` branches.
+/// It follows the grammar:
+///
+///     ConditionalStatement -> "if" Expression CodeBlock ("else if" Expression CodeBlock)* ("else" CodeBlock)?
+///
+/// The resulting AST structure for an `if-else` statement will be:
+/// 
+///     AST_PROGRAM
+///     ├── AST_CONDITIONAL_STATEMENT (if)
+///     │   ├── AST_BOOLEAN_LITERAL (true)
+///     │   ├── AST_CONDITIONAL_BODY
+///     │   │   ├── AST_CODE_BLOCK (if-execution)
+///     │   │   ├── AST_CODE_BLOCK (else-execution)
+///     ├── AST_PROGRAM
+/// 
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed conditional statement.
+///
 ASTNode *parseConditionalStatement(Parser *parser, FILE *sourceCode);
 
+/// Parses a repeat-until loop in the Opus programming language.
+///
+/// This function handles `repeat-until` loops, which execute the loop body at least once
+/// before checking the termination condition. It follows the grammar:
+///
+///     RepeatUntilStatement -> "repeat" CodeBlock "until" Expression Delimiter
+///
+/// The resulting AST structure for a `repeat-until` loop will be:
+/// 
+///     AST_PROGRAM
+///     ├── AST_REPEAT_UNTIL_STATEMENT (repeat)
+///     │   ├── AST_BOOLEAN_EXPRESSION
+///     │   ├── AST_CODE_BLOCK
+///     ├── AST_PROGRAM
+/// 
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed repeat-until loop.
+///
 ASTNode *parseRepeatUntilStatement(Parser *parser, FILE *sourceCode);
 
+/// Parses a for-in loop in the Opus programming language.
+///
+/// This function handles `for-in` loops, which iterate over a collection.
+/// It follows the grammar:
+///
+///     ForInStatement -> "for" Identifier "in" Expression CodeBlock
+///
+/// The resulting AST structure for a `for-in` loop will be:
+///
+///     AST_PROGRAM
+///     ├── AST_FOR_IN_STATEMENT (for)
+///     │   ├── AST_FOR_IN_CONTEXT
+///     │   │   ├── AST_IDENTIFIER (number)
+///     │   │   ├── AST_IDENTIFIER (numbers)
+///     │   ├── AST_CODE_BLOCK
+///     ├── AST_PROGRAM
+///
+/// @param parser A pointer to the Parser instance, which maintains the token stream.
+/// @param sourceCode A file pointer to the source code (used for error reporting).
+/// @return A pointer to the ASTNode representing the parsed for-in loop.
+///
 ASTNode *parseForInStatement(Parser *parser, FILE *sourceCode);
 
 /// Parses an expression in the Opus programming language.
