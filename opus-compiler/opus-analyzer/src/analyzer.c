@@ -7,8 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "analyzer.h"
-#include "ast.h"
-#include "symbol.h"
 
 int analyzeProgram(Analyzer *analyzer, ASTNode *node) {
     // Return successful indication (True) if there is no node to analyze
