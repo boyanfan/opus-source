@@ -9,20 +9,22 @@
 #include "analyzer.h"
 
 int analyzeProgram(Analyzer *analyzer, ASTNode *node) {
-    // Return successful indication (True) if there is no node to analyze
-    if (!node) return 1;
-    
+    // Return successful indication (True) if there is no node to analyze 
     int result = 1;
+    if (!node) return result;
 
+    // Recursively analyze each node's left and right nodes
     if (node->nodeType == AST_PROGRAM) {
         if (node->left) result = analyzeStatement(analyzer, node->left);
         if (node->right) result = analyzeProgram(analyzer, node->right);
     }
 
+    // Return the result after recursively analyzed all AST nodes
     return result;
 }
 
 int analyzeStatement(Analyzer *analyzer, ASTNode *node) {
+    // Try to analyze variable and constant declaration statements
     if (node->nodeType == AST_VARIABLE_DECLARATION || node->nodeType == AST_CONSTANT_DECLARATION) {
         return analyzeDeclaration(analyzer, node);
     } 
@@ -31,18 +33,19 @@ int analyzeStatement(Analyzer *analyzer, ASTNode *node) {
 }
 
 int analyzeDeclaration(Analyzer *analyzer, ASTNode *node) {
-    if (node->nodeType != AST_VARIABLE_DECLARATION && node->nodeType != AST_CONSTANT_DECLARATION) {
-        return 0;
-    }
-
+    // Get the variable or constant identifier and its type for symbol table lookup 
     const char *identifier = node->left->token->lexeme;
     const char *type = node->right->token->lexeme;
 
-    Symbol *currentSymbol = lookupSymbolFromCurrentNamespace(analyzer->symbolTable, identifier);
-    
-    if (currentSymbol) return 0;
+    // Check if the declaration already exists 
+    if (lookupSymbolFromCurrentNamespace(analyzer->symbolTable, identifier)) return 0;
 
+    // Add this declaration to the table
     addSymbol(analyzer->symbolTable, identifier, type, node->token->location);
+
+    // Check if it is mutable and update the symbol table
+    if (node->nodeType == AST_VARIABLE_DECLARATION) analyzer->symbolTable->headSymbol->isMutable = 1;
+
     return 1;
 }
 
@@ -77,6 +80,7 @@ void addSymbol(SymbolTable *symbolTable, const char *identifier, const char *typ
         symbol->namespace = symbolTable->currentNamespace;
         symbol->declarationLocation = location;
         symbol->hasInitialized = 0;
+        symbol->isMutable = 0;
 
         // Add to the beginning of the linked list
         symbol->nextSymbol = symbolTable->headSymbol;
@@ -154,15 +158,16 @@ void freeSymbolTable(SymbolTable *symbolTable) {
 void displaySymbolTable(SymbolTable *symbolTable) {
     Symbol *currentSymbol = symbolTable->headSymbol;
 
-    printf("----------------------------- Symbol Table -----------------------------\n");
-    printf("%-20s %-15s %-10s %-15s %s\n", "Identifier", "Type", "Namespace", "Initialized", "Location");
+    printf("---------------------------------- Symbol Table -----------------------------------\n");
+    printf("%-20s %-20s %-10s %-12s %-8s %s\n", "Identifier", "Type", "Namespace", "Initialized", "Mutable", "Location");
 
     while (currentSymbol) {
-        printf("%-20s %-15s %-10d %-15s %d:%d\n",
+        printf("%-20s %-20s %-10d %-12s %-8s %d:%d\n",
             currentSymbol->identifier,
             currentSymbol->type,
             currentSymbol->namespace,
             currentSymbol->hasInitialized ? "Yes" : "No",
+            currentSymbol->isMutable ? "Yes" : "No",
             currentSymbol->declarationLocation.line,
             currentSymbol->declarationLocation.column 
         );
@@ -170,5 +175,5 @@ void displaySymbolTable(SymbolTable *symbolTable) {
         currentSymbol = currentSymbol->nextSymbol;
     }
 
-    printf("------------------------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------------------------\n");
 }

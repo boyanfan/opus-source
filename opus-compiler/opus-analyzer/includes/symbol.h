@@ -18,6 +18,7 @@ typedef struct Symbol {
     char type[LEXEME_LENGTH];         /// The type name of the identifier or of the label.
     int namespace;                    /// The namespace (i.e. scope level) of the symbol.
     int hasInitialized;               /// Whether the symbol has been initialized.
+    int isMutable;                    /// Whether it is a constant.
     Location declarationLocation;     /// The location where the symbol declarated.
     struct Symbol *nextSymbol;        /// Pointer to the next symbol for linked list implementation.
 } Symbol;
