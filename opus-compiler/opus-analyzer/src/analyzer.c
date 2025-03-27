@@ -37,8 +37,12 @@ int analyzeDeclaration(Analyzer *analyzer, ASTNode *node) {
     const char *identifier = node->left->token->lexeme;
     const char *type = node->right->token->lexeme;
 
-    // Check if the declaration already exists 
-    if (lookupSymbolFromCurrentNamespace(analyzer->symbolTable, identifier)) return 0;
+    // Check if the declaration already exists, report error
+    if (lookupSymbolFromCurrentNamespace(analyzer->symbolTable, identifier)) {
+        analyzer->analyzerError = ANALYZER_ERROR_REDECLARED_VARIABLE;
+        reportAnalyzerError(analyzer, node);
+        return 0;
+    }
 
     // Add this declaration to the table
     addSymbol(analyzer->symbolTable, identifier, type, node->token->location);
@@ -47,6 +51,20 @@ int analyzeDeclaration(Analyzer *analyzer, ASTNode *node) {
     if (node->nodeType == AST_VARIABLE_DECLARATION) analyzer->symbolTable->headSymbol->isMutable = 1;
 
     return 1;
+}
+
+void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
+    switch (analyzer->analyzerError) {
+        case ANALYZER_ERROR_REDECLARED_VARIABLE: {
+            const char *identifier = node->left->token->lexeme;
+            int line = node->left->token->location.line;
+            int column = node->left->token->location.column;
+            printf("[ERROR] Redeclared symbol '%s' at location %d:%d\n", identifier, line, column); 
+            break;
+        }
+
+        default: printf("Unknown error!\n"); break;
+    }
 }
 
 Analyzer *initAnalyzer(ASTNode *node, SymbolTable *symbolTable) {

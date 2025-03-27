@@ -28,6 +28,14 @@ typedef struct {
     AnalyzerError analyzerError;   /// Holds the current error state of the analyzer.
 } Analyzer;
 
+int analyzeProgram(Analyzer *analyzer, ASTNode *node);
+
+int analyzeStatement(Analyzer *analyzer, ASTNode *node);
+
+int analyzeDeclaration(Analyzer *analyzer, ASTNode *node);
+
+void reportAnalyzerError(Analyzer *analyzer, ASTNode *node); 
+
 /// Initializes a new semantic analyzer with the given AST and symbol table. This function allocates
 /// memory for an `Analyzer` struct and assigns the provided  AST and symbol table to it.
 ///
@@ -36,11 +44,5 @@ typedef struct {
 /// @return A pointer to the initialized `Analyzer` instance, or NULL if memory allocation fails.
 ///
 Analyzer *initAnalyzer(ASTNode *node, SymbolTable *symbolTable);
-
-int analyzeProgram(Analyzer *analyzer, ASTNode *node);
-
-int analyzeStatement(Analyzer *analyzer, ASTNode *node);
-
-int analyzeDeclaration(Analyzer *analyzer, ASTNode *node);
 
 #endif

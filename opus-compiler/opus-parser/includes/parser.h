@@ -92,10 +92,10 @@ ASTNode *parseProgram(Parser *parser, FILE *sourceCode);
 ///
 ASTNode *parseStatement(Parser *parser, FILE *sourceCode);
 
-/// Parses a VariableDeclaration statement in the Opus programming language.
+/// Parses a Declaration statement in the Opus programming language.
 ///
 /// This function follows the grammar:
-///     VariableDeclaration -> ("var" | "let") Identifier ":" Type
+///     Declaration -> ("var" | "let") Identifier ":" Type
 ///
 /// It constructs an Abstract Syntax Tree (AST) node representing the variable declaration.
 /// The resulting AST structure will be:
@@ -108,7 +108,7 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode);
 /// @param sourceCode A file pointer to the source code (used for error reporting).
 /// @return A pointer to the ASTNode representing the VariableDeclaration, or NULL if a parsing error occurs.
 ///
-ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode);
+ASTNode *parseDeclaration(Parser *parser, FILE *sourceCode);
 
 /// Parses an assignment statement and constructs the corresponding AST node. It takes the left-value, which 
 /// can be either an identifier or a declaration statement, verifies the assignment syntax, and processes 

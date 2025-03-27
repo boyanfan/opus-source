@@ -38,7 +38,7 @@ ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
 ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
     // Try to parse declaration statement
     if (matchTokenType(parser, TOKEN_KEYWORD_VAR) || matchTokenType(parser, TOKEN_KEYWORD_LET)) { 
-        return parseVariableDeclaration(parser, sourceCode);
+        return parseDeclaration(parser, sourceCode);
     }
 
     // Try to parse function definition statement 
@@ -72,7 +72,7 @@ ASTNode *parseStatement(Parser *parser, FILE *sourceCode) {
     }
 }
 
-ASTNode *parseVariableDeclaration(Parser *parser, FILE *sourceCode) {
+ASTNode *parseDeclaration(Parser *parser, FILE *sourceCode) {
     // Create a node for the variable declaration statement
     ASTNode *root = (parser->currentToken->tokenType == TOKEN_KEYWORD_VAR)
         ? initASTNode(AST_VARIABLE_DECLARATION, parser->currentToken)
