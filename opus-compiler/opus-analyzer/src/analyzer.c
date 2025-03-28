@@ -7,16 +7,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include "analyzer.h"
+#include "ast.h"
 
 int analyzeProgram(Analyzer *analyzer, ASTNode *node) {
-    // Return successful indication (True) if there is no node to analyze 
+    // Return successful indication (True) if there is no node to analyze
     int result = 1;
     if (!node) return result;
 
     // Recursively analyze each node's left and right nodes
-    if (node->nodeType == AST_PROGRAM) {
-        if (node->left) result = analyzeStatement(analyzer, node->left);
-        if (node->right) result = analyzeProgram(analyzer, node->right);
+    if (node->nodeType == AST_PROGRAM) { 
+        if (node->left) result = analyzeStatement(analyzer, node->left) && result;
+        if (node->right) result = analyzeProgram(analyzer, node->right) && result;
     }
 
     // Return the result after recursively analyzed all AST nodes
@@ -25,14 +26,18 @@ int analyzeProgram(Analyzer *analyzer, ASTNode *node) {
 
 int analyzeStatement(Analyzer *analyzer, ASTNode *node) {
     // Try to analyze variable and constant declaration statements
-    if (node->nodeType == AST_VARIABLE_DECLARATION || node->nodeType == AST_CONSTANT_DECLARATION) {
-        return analyzeDeclaration(analyzer, node);
+    if (node->nodeType == AST_VARIABLE_DECLARATION || node->nodeType == AST_CONSTANT_DECLARATION) { 
+        return analyzeDeclarationStatement(analyzer, node);
     } 
 
+    // Try to analyze assignment statements
+    else if (node->nodeType == AST_ASSIGNMENT_STATEMENT) return analyzeAssignmentStatement(analyzer, node);
+
+    // Return successful indication (True) if there is no node to analyze
     return 1;
 }
 
-int analyzeDeclaration(Analyzer *analyzer, ASTNode *node) {
+int analyzeDeclarationStatement(Analyzer *analyzer, ASTNode *node) {
     // Get the variable or constant identifier and its type for symbol table lookup 
     const char *identifier = node->left->token->lexeme;
     const char *type = node->right->token->lexeme;
@@ -53,6 +58,45 @@ int analyzeDeclaration(Analyzer *analyzer, ASTNode *node) {
     return 1;
 }
 
+int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node) {
+    // Initialize successful indication (True) for multiple statements analyzing
+    int result = 1;
+    const char *identifier = node->left->token->lexeme;
+
+    // If the declaration statement comes together with the assignment statement
+    if (node->left->nodeType == AST_VARIABLE_DECLARATION || node->left->nodeType == AST_CONSTANT_DECLARATION) { 
+        result = analyzeDeclarationStatement(analyzer, node->left);
+
+        // Return if the declaration statement is invalid
+        if (!result) return result;
+
+        // Otherwise, get the declared identifier
+        identifier = analyzer->symbolTable->headSymbol->identifier;
+    }  
+
+    // Then check if the identifier exist
+    Symbol* symbol = lookupSymbolFromCurrentNamespace(analyzer->symbolTable, identifier);
+
+    // Check if trying to assign to an undeclared variable or constant 
+    if (!symbol) {
+        analyzer->analyzerError = ANALYZER_ERROR_UNDECLARED_VARIABLE;
+        reportAnalyzerError(analyzer, node);
+        return 0;
+    }
+
+    // Check if trying to modify a constant
+    if (!symbol->isMutable && symbol->hasInitialized) {
+        analyzer->analyzerError = ANALYZER_ERROR_IMMUTABLE_MODIFICATION;
+        reportAnalyzerError(analyzer, node);
+        return 0;
+    }
+
+    // Initialize symbol by assigning a value to it
+    symbol->hasInitialized = 1;
+
+    return result;
+}
+
 void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
     switch (analyzer->analyzerError) {
         case ANALYZER_ERROR_REDECLARED_VARIABLE: {
@@ -60,6 +104,22 @@ void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
             int line = node->left->token->location.line;
             int column = node->left->token->location.column;
             printf("[ERROR] Redeclared symbol '%s' at location %d:%d\n", identifier, line, column); 
+            break;
+        }
+
+        case ANALYZER_ERROR_UNDECLARED_VARIABLE: {
+            const char *identifier = node->left->token->lexeme;
+            int line = node->left->token->location.line;
+            int column = node->left->token->location.column;
+            printf("[ERROR] Undeclared symbol '%s' at location %d:%d\n", identifier, line, column); 
+            break;
+        }
+
+        case ANALYZER_ERROR_IMMUTABLE_MODIFICATION: {
+            const char *identifier = node->left->token->lexeme;
+            int line = node->left->token->location.line;
+            int column = node->left->token->location.column;
+            printf("[ERROR] Symbol '%s' is immutable at location %d:%d\n", identifier, line, column); 
             break;
         }
 
@@ -113,6 +173,7 @@ Symbol *lookupSymbol(SymbolTable *symbolTable, const char *identifier) {
         if (strcmp(currentSymbol->identifier, identifier) == 0) {
             return currentSymbol;
         }
+        currentSymbol = currentSymbol->nextSymbol;
     }
 
     return NULL;
@@ -139,6 +200,7 @@ Symbol *lookupSymbolFromCurrentNamespace(SymbolTable *symbolTable, const char *i
             currentSymbol->namespace == symbolTable->currentNamespace) {
             return currentSymbol;
         }
+        currentSymbol = currentSymbol->nextSymbol;
     }
 
     return NULL;

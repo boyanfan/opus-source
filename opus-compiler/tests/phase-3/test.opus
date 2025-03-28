@@ -1,1 +1,1 @@
-var numberOfMaxStudent: MutableObject
+let name: String = "Boyan Fan"

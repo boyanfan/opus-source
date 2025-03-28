@@ -16,9 +16,10 @@
 
 /// Enumerates possible semantic errors encountered during analysis.
 typedef enum {
-    ANALYZER_ERROR_NONE,                  /// No semantic error occurred.
-    ANALYZER_ERROR_UNDECLARED_VARIABLE,   /// An undeclared variable was referenced in the source code.
-    ANALYZER_ERROR_REDECLARED_VARIABLE,   /// A variable was declared more than once in the same scope.
+    ANALYZER_ERROR_NONE,                     /// No semantic error occurred.
+    ANALYZER_ERROR_UNDECLARED_VARIABLE,      /// An undeclared variable was referenced in the source code.
+    ANALYZER_ERROR_REDECLARED_VARIABLE,      /// A variable was declared more than once in the same scope.
+    ANALYZER_ERROR_IMMUTABLE_MODIFICATION,   /// Modifying an immutable instance like a constant.
 } AnalyzerError;
 
 /// Represents the semantic analyzer, which holds context for analyzing
@@ -32,7 +33,9 @@ int analyzeProgram(Analyzer *analyzer, ASTNode *node);
 
 int analyzeStatement(Analyzer *analyzer, ASTNode *node);
 
-int analyzeDeclaration(Analyzer *analyzer, ASTNode *node);
+int analyzeDeclarationStatement(Analyzer *analyzer, ASTNode *node);
+
+int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node);
 
 void reportAnalyzerError(Analyzer *analyzer, ASTNode *node); 
 
