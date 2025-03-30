@@ -139,7 +139,7 @@ void foldBinaryExpression(ASTNode* node) {
     ASTNode *lhs = node->left;
     ASTNode *rhs = node->right;
 
-    // Check if it is a binary expressionn node 
+    // Check for the arithmetic binary expression
     if (operator == TOKEN_ARITHMETIC_ADDITION || operator == TOKEN_ARITHMETIC_SUBTRACTION ||
         operator == TOKEN_ARITHMETIC_MULTIPLICATION || operator == TOKEN_ARITHMETIC_DIVISION ||
         operator == TOKEN_ARITHMETIC_MODULO) {
@@ -188,7 +188,63 @@ void foldBinaryExpression(ASTNode* node) {
         }
     }
 
-    // TODO: Support relational and logical operators
+    // Check for the logical 'and' and 'or' binary expression 
+    else if (operator == TOKEN_LOGICAL_AND_OPERATOR || operator == TOKEN_LOGICAL_OR_OPERATOR) {
+        strcpy(node->inferredType, "Bool");
+
+        if (lhs->isFoldable && rhs->isFoldable) {
+            int lhsValue = lhs->nodeValue.booleanValue;
+            int rhsValue = rhs->nodeValue.booleanValue;
+            int result = (operator == TOKEN_LOGICAL_AND_OPERATOR) ? (lhsValue && rhsValue) : (lhsValue || rhsValue);
+            node->nodeValue.booleanValue = result;
+            node->isFoldable = 1;
+        }
+    }
+
+    // Check for the logical '==' and '!=' binary expression
+    else if (operator == TOKEN_LOGICAL_EQUIVALENCE || operator == TOKEN_NOT_EQUAL_TO_OPERATOR) {
+        strcpy(node->inferredType, "Bool");
+        
+        int result = 0;
+
+        if (strcmp(lhs->inferredType, "Int") == 0) 
+            result = (lhs->nodeValue.integerValue == rhs->nodeValue.integerValue);
+
+        else if (strcmp(lhs->inferredType, "Float") == 0)
+            result = (lhs->nodeValue.floatingValue == rhs->nodeValue.floatingValue);
+
+        else if (strcmp(lhs->inferredType, "Bool") == 0)
+
+            result = (lhs->nodeValue.booleanValue == rhs->nodeValue.booleanValue);
+
+        else if (strcmp(lhs->inferredType, "String") == 0)
+            result = (strcmp(lhs->nodeValue.stringLiteral, rhs->nodeValue.stringLiteral) == 0);
+
+        node->nodeValue.booleanValue = (operator == TOKEN_LOGICAL_EQUIVALENCE) ? result : !result;
+        node->isFoldable = 1;
+    }
+
+    // Check for relational operators '>', '<', '>=' and '<='
+    else if (operator == TOKEN_GREATER_THAN_OPERATOR || operator == TOKEN_LESS_THAN_OPERATOR ||
+             operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR || operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) {
+        strcpy(node->inferredType, "Bool");
+
+        float lhsValue = (strcmp(lhs->inferredType, "Float") == 0) ?
+                         lhs->nodeValue.floatingValue : (float) lhs->nodeValue.integerValue;
+
+        float rhsValue = (strcmp(rhs->inferredType, "Float") == 0) ?
+                         rhs->nodeValue.floatingValue : (float) rhs->nodeValue.integerValue;
+        
+        int result = 0;
+
+        if (operator == TOKEN_GREATER_THAN_OPERATOR) result = lhsValue > rhsValue;
+        else if (operator == TOKEN_LESS_THAN_OPERATOR) result = lhsValue < rhsValue;
+        else if (operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR) result = lhsValue >= rhsValue;
+        else if (operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) result = lhsValue <= rhsValue;
+
+        node->nodeValue.booleanValue = result;
+        node->isFoldable = 1;
+    }
 }
 
 int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
@@ -283,6 +339,8 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
             if (!analyzeExpression(analyzer, node->right)) return 0;
 
             TokenType operator = node->token->tokenType;
+            ASTNode* lhs = node->left;
+            ASTNode* rhs = node->right;
 
             // For arithmetic operators, both operands must be numeric 
             if (operator == TOKEN_ARITHMETIC_ADDITION || operator == TOKEN_ARITHMETIC_SUBTRACTION ||
@@ -290,23 +348,51 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
                 operator == TOKEN_ARITHMETIC_MODULO) {
 
                 // Handle missmatched type 
-                if (!isNumeric(node->left->inferredType) || !isNumeric(node->right->inferredType)) {
+                if (!isNumeric(lhs->inferredType) || !isNumeric(rhs->inferredType)) {
                     analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
                     reportAnalyzerError(analyzer, node);
                     return 0;
                 }
 
                 // Infer the result type as Float if either operand is Float
-                if (strcmp(node->left->inferredType, "Float") == 0 || strcmp(node->right->inferredType, "Float") == 0) {
+                if (strcmp(lhs->inferredType, "Float") == 0 || strcmp(rhs->inferredType, "Float") == 0) {
                     strcpy(node->inferredType, "Float");
                 }
 
                 // Otherwise the result is an Int
-                else strcpy(node->inferredType, "Int");
-
-                // Perform constant fold if both lhs and rhs are foldable 
-                if (node->left->isFoldable && node->right->isFoldable) foldBinaryExpression(node);
+                else strcpy(node->inferredType, "Int");    
             }
+
+            // For logical operators 'and' and 'or', both operands must be boolean
+            else if (operator == TOKEN_LOGICAL_AND_OPERATOR || operator == TOKEN_LOGICAL_OR_OPERATOR) {
+                if (strcmp(lhs->inferredType, "Bool") != 0 || strcmp(rhs->inferredType, "Bool") != 0) {
+                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+            }
+
+            // For logical operators '==' and '!=', both operands must be the same type 
+            else if (operator == TOKEN_LOGICAL_EQUIVALENCE || operator == TOKEN_NOT_EQUAL_TO_OPERATOR) {
+                if (strcmp(lhs->inferredType, rhs->inferredType) != 0) {
+                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+            }
+
+            // For relational operators '>', '<', '>=' and '<=', both operands must be numeric
+            else if (operator == TOKEN_GREATER_THAN_OPERATOR || operator == TOKEN_LESS_THAN_OPERATOR ||
+                     operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR || operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) {
+                if (!(isNumeric(lhs->inferredType) && isNumeric(rhs->inferredType))) {
+                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+            }
+
+            // Perform constant fold if both lhs and rhs are foldable 
+            if (node->left->isFoldable && node->right->isFoldable) foldBinaryExpression(node);
 
             // TODO:  Support relational and logical operators
             return 1;
