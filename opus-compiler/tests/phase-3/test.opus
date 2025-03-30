@@ -1,1 +1,4 @@
-let name: String = "Boyan Fan"
+let x: Int = 1 + 5 * 4
+var y: Int = x + 1
+
+y = y + 1

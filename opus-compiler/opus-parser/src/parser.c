@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "parser.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
@@ -906,6 +907,10 @@ ASTNode* initASTNode(ASTNodeType nodeType, Token *token) {
     node->token = token;
     node->left = NULL;
     node->right = NULL;
+
+    /* Extension ASTNode where fields added for semantic analysis */ 
+    strcpy(node->inferredType, "Any");
+    node->isFoldable = 1;
 
     return node;
 }

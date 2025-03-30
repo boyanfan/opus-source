@@ -20,6 +20,15 @@ typedef struct Symbol {
     int hasInitialized;               /// Whether the symbol has been initialized.
     int isMutable;                    /// Whether it is a constant.
     Location declarationLocation;     /// The location where the symbol declarated.
+
+    /// Value evaluated for the symbol
+    union { 
+        int integerValue; 
+        float floatingValue; 
+        int booleanValue; 
+        char stringLiteral[LEXEME_LENGTH]; 
+    } symbolValue;
+
     struct Symbol *nextSymbol;        /// Pointer to the next symbol for linked list implementation.
 } Symbol;
 

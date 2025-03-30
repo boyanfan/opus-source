@@ -20,6 +20,7 @@ typedef enum {
     ANALYZER_ERROR_UNDECLARED_VARIABLE,      /// An undeclared variable was referenced in the source code.
     ANALYZER_ERROR_REDECLARED_VARIABLE,      /// A variable was declared more than once in the same scope.
     ANALYZER_ERROR_IMMUTABLE_MODIFICATION,   /// Modifying an immutable instance like a constant.
+    ANALYZER_ERROR_TYPE_MISSMATCH,           /// Type missmatch for operators.
 } AnalyzerError;
 
 /// Represents the semantic analyzer, which holds context for analyzing
@@ -37,6 +38,10 @@ int analyzeDeclarationStatement(Analyzer *analyzer, ASTNode *node);
 
 int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node);
 
+int analyzeExpression(Analyzer *analyzer, ASTNode *node);
+
+void foldBinaryExpression(ASTNode* node);
+
 void reportAnalyzerError(Analyzer *analyzer, ASTNode *node); 
 
 /// Initializes a new semantic analyzer with the given AST and symbol table. This function allocates
@@ -47,5 +52,7 @@ void reportAnalyzerError(Analyzer *analyzer, ASTNode *node);
 /// @return A pointer to the initialized `Analyzer` instance, or NULL if memory allocation fails.
 ///
 Analyzer *initAnalyzer(ASTNode *node, SymbolTable *symbolTable);
+
+int isNumeric(const char* type);
 
 #endif

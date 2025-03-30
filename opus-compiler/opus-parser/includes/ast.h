@@ -47,10 +47,22 @@ typedef enum {
 
 /// AST Node structure for the abstract syntax tree.
 typedef struct ASTNode {
-    Token *token;             /// The token associated with this AST node (if applicable).
+    Token *token;            /// The token associated with this AST node (if applicable).
     ASTNodeType nodeType;    /// The type of AST node.
     struct ASTNode* left;    /// Pointer to the first child node (or left operand).
     struct ASTNode* right;   /// Pointer to the next sibling or right operand node.
+    
+    /* Extension ASTNode where fields added for semantic analysis */
+    char inferredType[LEXEME_LENGTH];   /// Type inferred by the Opus compiler 
+    int isFoldable;                     /// 1 (Ture) if the node is constant-foldable
+
+    /// Value evaluated for the current node 
+    union { 
+        int integerValue; 
+        float floatingValue; 
+        int booleanValue; 
+        char stringLiteral[LEXEME_LENGTH]; 
+    } nodeValue;
 } ASTNode;
 
 /// Allocates and initializes a new AST node.

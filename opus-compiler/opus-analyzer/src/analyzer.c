@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "analyzer.h"
-#include "ast.h"
 
 int analyzeProgram(Analyzer *analyzer, ASTNode *node) {
     // Return successful indication (True) if there is no node to analyze
@@ -45,7 +45,7 @@ int analyzeDeclarationStatement(Analyzer *analyzer, ASTNode *node) {
     // Check if the declaration already exists, report error
     if (lookupSymbolFromCurrentNamespace(analyzer->symbolTable, identifier)) {
         analyzer->analyzerError = ANALYZER_ERROR_REDECLARED_VARIABLE;
-        reportAnalyzerError(analyzer, node);
+        reportAnalyzerError(analyzer, node->left);
         return 0;
     }
 
@@ -80,49 +80,276 @@ int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node) {
     // Check if trying to assign to an undeclared variable or constant 
     if (!symbol) {
         analyzer->analyzerError = ANALYZER_ERROR_UNDECLARED_VARIABLE;
-        reportAnalyzerError(analyzer, node);
+        reportAnalyzerError(analyzer, node->left);
         return 0;
     }
 
     // Check if trying to modify a constant
     if (!symbol->isMutable && symbol->hasInitialized) {
         analyzer->analyzerError = ANALYZER_ERROR_IMMUTABLE_MODIFICATION;
+        reportAnalyzerError(analyzer, node->left);
+        return 0;
+    }
+
+    // Analyze the rhs expression
+    result = analyzeExpression(analyzer, node->right) && result;
+
+    // Perform type checkinig for the assignment statement (type-check lhs and rhs)
+    if (strcmp(symbol->type, node->right->inferredType)) {
+        analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
         reportAnalyzerError(analyzer, node);
         return 0;
     }
 
+    // If the right-hand side is foldable, propagate its value to the symbol 
+    if (node->right->isFoldable) {
+        if (strcmp(node->right->inferredType, "Int") == 0) {
+            int value = node->right->nodeValue.integerValue;
+            symbol->symbolValue.integerValue = value;
+            printf("[Analyzer] Symbol '%s' is assigned with integer '%d'.\n", symbol->identifier, value);
+        }
+
+        else if (strcmp(node->right->inferredType, "Float") == 0) {
+            float value = node->right->nodeValue.floatingValue;
+            symbol->symbolValue.floatingValue = value;
+            printf("[Analyzer] Symbol '%s' is assigned with float '%f'.\n", symbol->identifier, value);
+        }
+
+        else if (strcmp(node->right->inferredType, "Bool") == 0) {
+            int value = node->right->nodeValue.booleanValue;
+            symbol->symbolValue.booleanValue = value;
+            printf("[Analyzer] Symbol '%s' is assigned with boolean '%s'.\n", symbol->identifier, 
+                   value == 0 ? "false" : "true");
+        }
+
+        else if (strcmp(node->right->inferredType, "String") == 0) {
+            const char* value = node->right->nodeValue.stringLiteral;
+            strcpy(symbol->symbolValue.stringLiteral, value);
+            printf("[Analyzer] Symbol '%s' is assigned with string '%s'.\n", symbol->identifier, value);
+        }
+    }
+
     // Initialize symbol by assigning a value to it
     symbol->hasInitialized = 1;
-
     return result;
+}
+
+void foldBinaryExpression(ASTNode* node) {
+    TokenType operator = node->token->tokenType;
+    ASTNode *lhs = node->left;
+    ASTNode *rhs = node->right;
+
+    // Check if it is a binary expressionn node 
+    if (operator == TOKEN_ARITHMETIC_ADDITION || operator == TOKEN_ARITHMETIC_SUBTRACTION ||
+        operator == TOKEN_ARITHMETIC_MULTIPLICATION || operator == TOKEN_ARITHMETIC_DIVISION ||
+        operator == TOKEN_ARITHMETIC_MODULO) {
+
+        // Try to infer the result type, where it is Float if either operand is a Float; otherwise Int 
+        int isFloat = (strcmp(lhs->inferredType, "Float") == 0 || strcmp(rhs->inferredType, "Float") == 0);
+
+        // If either operand is a Float, perform floating point operation
+        if (isFloat) {
+            // Get the value from the lhs and rhs
+            float lhsValue = (strcmp(lhs->inferredType, "Float") == 0) ? 
+                             lhs->nodeValue.floatingValue : (float) lhs->nodeValue.integerValue;
+            float rhsValue = (strcmp(rhs->inferredType, "Float") == 0) ? 
+                             rhs->nodeValue.floatingValue : (float) rhs->nodeValue.integerValue;
+            float result = 0.0f;
+
+            // Perform arithmetic operation
+            if (operator == TOKEN_ARITHMETIC_ADDITION) result = lhsValue + rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_SUBTRACTION) result = lhsValue - rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MULTIPLICATION) result = lhsValue * rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_DIVISION) result = lhsValue / rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MODULO) result = fmodf(lhsValue, rhsValue);
+
+            node->isFoldable = 1;
+            node->nodeValue.floatingValue = result;
+            strcpy(node->inferredType, "Float");
+        }
+
+        // Otherwise, perform integer operation
+        else {
+            // Get the value from the lhs and rhs
+            int lhsValue = lhs->nodeValue.integerValue;
+            int rhsValue = rhs->nodeValue.integerValue;
+            int result = 0;
+
+            // Perform arithmetic operation
+            if (operator == TOKEN_ARITHMETIC_ADDITION) result = lhsValue + rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_SUBTRACTION) result = lhsValue - rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MULTIPLICATION) result = lhsValue * rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_DIVISION) result = lhsValue / rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MODULO) result = lhsValue % rhsValue;
+
+            node->isFoldable = 1;
+            node->nodeValue.integerValue = result;
+            strcpy(node->inferredType, "Int");
+        }
+    }
+
+    // TODO: Support relational and logical operators
+}
+
+int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
+    // Return successful indication (True) if there is no node to analyze
+    if (!node) return 1;
+
+    // Perform ASTNode evaluation based on the node type  
+    switch (node->nodeType) {
+        // Determine if the boolean literal is 'true' or 'false'
+        case AST_BOOLEAN_LITERAL: {
+            strcpy(node->inferredType, "Bool");
+            node->isFoldable = 1;
+            node->nodeValue.booleanValue = (strcmp(node->token->lexeme, "true") == 0);
+            return 1;
+        }
+
+        // Determine if the literal is a Float, Int, or StringLiteral
+        case AST_LITERAL: {
+            // Handle string literal 
+            if (node->token->tokenType == TOKEN_STRING_LITERAL) {
+                strcpy(node->inferredType, "String");
+                node->isFoldable = 1;
+                strcpy(node->nodeValue.stringLiteral, node->token->lexeme);
+            }
+
+            // Handle numeric literal
+            else if (node->token->tokenType == TOKEN_NUMERIC) {
+                // Handle floating point literal
+                if (strchr(node->token->lexeme, '.') != NULL) {
+                    strcpy(node->inferredType, "Float");
+                    node->isFoldable = 1;
+                    node->nodeValue.floatingValue = atof(node->token->lexeme);
+                }
+
+                // Otherwise it is an integer
+                else {
+                    strcpy(node->inferredType, "Int");
+                    node->isFoldable = 1;
+                    node->nodeValue.integerValue = atoi(node->token->lexeme);
+                }
+            }
+            return 1;
+        }
+
+        // Determine if a symbol is referenced
+        case AST_IDENTIFIER: {
+            Symbol* symbol = lookupSymbolFromCurrentNamespace(analyzer->symbolTable, node->token->lexeme);
+
+            // If an undeclared symbol is referenced
+            if (!symbol) {
+                analyzer->analyzerError = ANALYZER_ERROR_UNDECLARED_VARIABLE;
+                reportAnalyzerError(analyzer, node);
+                return 0;
+            }
+
+            strcpy(node->inferredType, symbol->type);
+
+            // If it has been initialized, we can perform constant fold
+            if (symbol->hasInitialized) {
+                // Handle string literal 
+                if (strcmp(symbol->type, "String")) {
+                    strcpy(node->nodeValue.stringLiteral, symbol->symbolValue.stringLiteral);
+                }
+
+                // Handle float 
+                else if (strcmp(symbol->type, "Float")) {
+                    node->nodeValue.floatingValue = symbol->symbolValue.floatingValue;
+                }
+
+                // Handle integer
+                else if (strcmp(symbol->type, "Int")) {
+                    node->nodeValue.integerValue = symbol->symbolValue.integerValue;
+                }
+
+                // Handle boolean
+                else if (strcmp(symbol->type, "Bool")) {
+                    node->nodeValue.booleanValue = symbol->symbolValue.booleanValue;
+                }
+
+                // If unable to reference value from the identifier
+                else node->isFoldable = 0;
+            }
+
+            else node->isFoldable = 0;
+            return 1;
+        }
+
+        // Determine if it is a binary expression 
+        case AST_BINARY_EXPRESSION: {
+            // Recursively analyze left and right operands
+            if (!analyzeExpression(analyzer, node->left)) return 0;
+            if (!analyzeExpression(analyzer, node->right)) return 0;
+
+            TokenType operator = node->token->tokenType;
+
+            // For arithmetic operators, both operands must be numeric 
+            if (operator == TOKEN_ARITHMETIC_ADDITION || operator == TOKEN_ARITHMETIC_SUBTRACTION ||
+                operator == TOKEN_ARITHMETIC_MULTIPLICATION || operator == TOKEN_ARITHMETIC_DIVISION ||
+                operator == TOKEN_ARITHMETIC_MODULO) {
+
+                // Handle missmatched type 
+                if (!isNumeric(node->left->inferredType) || !isNumeric(node->right->inferredType)) {
+                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+
+                // Infer the result type as Float if either operand is Float
+                if (strcmp(node->left->inferredType, "Float") == 0 || strcmp(node->right->inferredType, "Float") == 0) {
+                    strcpy(node->inferredType, "Float");
+                }
+
+                // Otherwise the result is an Int
+                else strcpy(node->inferredType, "Int");
+
+                // Perform constant fold if both lhs and rhs are foldable 
+                if (node->left->isFoldable && node->right->isFoldable) foldBinaryExpression(node);
+            }
+
+            // TODO:  Support relational and logical operators
+            return 1;
+        }
+
+        // TODO: Support function call and other node types 
+        default: return 1;
+    }
 }
 
 void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
     switch (analyzer->analyzerError) {
         case ANALYZER_ERROR_REDECLARED_VARIABLE: {
-            const char *identifier = node->left->token->lexeme;
-            int line = node->left->token->location.line;
-            int column = node->left->token->location.column;
-            printf("[ERROR] Redeclared symbol '%s' at location %d:%d\n", identifier, line, column); 
+            const char *identifier = node->token->lexeme;
+            int line = node->token->location.line;
+            int column = node->token->location.column;
+            printf("[ERROR] Redeclared symbol '%s' at location %d:%d.\n", identifier, line, column); 
             break;
         }
 
         case ANALYZER_ERROR_UNDECLARED_VARIABLE: {
-            const char *identifier = node->left->token->lexeme;
-            int line = node->left->token->location.line;
-            int column = node->left->token->location.column;
-            printf("[ERROR] Undeclared symbol '%s' at location %d:%d\n", identifier, line, column); 
+            const char *identifier = node->token->lexeme;
+            int line = node->token->location.line;
+            int column = node->token->location.column;
+            printf("[ERROR] Undeclared symbol '%s' at location %d:%d.\n", identifier, line, column); 
             break;
         }
 
         case ANALYZER_ERROR_IMMUTABLE_MODIFICATION: {
-            const char *identifier = node->left->token->lexeme;
-            int line = node->left->token->location.line;
-            int column = node->left->token->location.column;
-            printf("[ERROR] Symbol '%s' is immutable at location %d:%d\n", identifier, line, column); 
+            const char *identifier = node->token->lexeme;
+            int line = node->token->location.line;
+            int column = node->token->location.column;
+            printf("[ERROR] Symbol '%s' is immutable at location %d:%d.\n", identifier, line, column); 
             break;
         }
 
+        case ANALYZER_ERROR_TYPE_MISSMATCH: {
+            const char *operator = node->token->lexeme;
+            int line = node->token->location.line;
+            int column = node->token->location.column;
+            printf("[ERROR] Unable to perform '%s' due to type missmatch at location %d:%d.\n", operator, line, column);
+            break;
+        }
         default: printf("Unknown error!\n"); break;
     }
 }
@@ -238,7 +465,7 @@ void freeSymbolTable(SymbolTable *symbolTable) {
 void displaySymbolTable(SymbolTable *symbolTable) {
     Symbol *currentSymbol = symbolTable->headSymbol;
 
-    printf("---------------------------------- Symbol Table -----------------------------------\n");
+    printf("\n---------------------------------- Symbol Table -----------------------------------\n");
     printf("%-20s %-20s %-10s %-12s %-8s %s\n", "Identifier", "Type", "Namespace", "Initialized", "Mutable", "Location");
 
     while (currentSymbol) {
@@ -256,4 +483,9 @@ void displaySymbolTable(SymbolTable *symbolTable) {
     }
 
     printf("-----------------------------------------------------------------------------------\n");
+}
+
+int isNumeric(const char* type) {
+    // Checks if the given type is numeric
+    return (strcmp(type, "Int") == 0 || strcmp(type, "Float") == 0);
 }
