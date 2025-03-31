@@ -1,3 +1,5 @@
-let a: Int = 5
+var x: Bool = false
 
-let b: Int = -a!
+if (!x) {
+    let a: String = "Boyan"
+} 

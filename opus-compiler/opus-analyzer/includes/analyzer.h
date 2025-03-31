@@ -21,6 +21,7 @@ typedef enum {
     ANALYZER_ERROR_REDECLARED_VARIABLE,        /// A variable was declared more than once in the same scope.
     ANALYZER_ERROR_IMMUTABLE_MODIFICATION,     /// Modifying an immutable instance like a constant.
     ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH,   /// Type missmatch for operators.
+    ANALYZER_ERROR_INVALID_CONDITION,          /// Invalid condition statement.
 } AnalyzerError;
 
 /// Represents the semantic analyzer, which holds context for analyzing
@@ -83,6 +84,10 @@ int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node);
 /// @return 1 (True) if the expression is semantically valid; 0 (False) if an error occurs.
 ///
 int analyzeExpression(Analyzer *analyzer, ASTNode *node);
+
+int analyzeCodeBlock(Analyzer *analyzer, ASTNode *node);
+
+int analyzeConditionalStatement(Analyzer *analyzer, ASTNode *node);
 
 /// Evaluates a binary expression at compile time and folds it into a constant node.
 ///

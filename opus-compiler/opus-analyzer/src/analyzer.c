@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include "analyzer.h"
+#include "ast.h"
+#include "symbol.h"
 
 int analyzeProgram(Analyzer *analyzer, ASTNode *node) {
     // Return successful indication (True) if there is no node to analyze
@@ -32,6 +34,9 @@ int analyzeStatement(Analyzer *analyzer, ASTNode *node) {
 
     // Try to analyze assignment statements
     else if (node->nodeType == AST_ASSIGNMENT_STATEMENT) return analyzeAssignmentStatement(analyzer, node);
+
+    // Try to analyze a conditional statement
+    else if (node->nodeType == AST_CONDITIONAL_STATEMENT) return analyzeConditionalStatement(analyzer, node);
 
     // Return successful indication (True) if there is no node to analyze
     return 1;
@@ -106,187 +111,32 @@ int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node) {
         if (strcmp(node->right->inferredType, "Int") == 0) {
             int value = node->right->nodeValue.integerValue;
             symbol->symbolValue.integerValue = value;
-            printf("[Analyzer] Symbol '%s' is assigned with integer '%d'.\n", symbol->identifier, value);
+            printf("[Analyzer] Symbol '%s' may be assigned with integer '%d'.\n", symbol->identifier, value);
         }
 
         else if (strcmp(node->right->inferredType, "Float") == 0) {
             float value = node->right->nodeValue.floatingValue;
             symbol->symbolValue.floatingValue = value;
-            printf("[Analyzer] Symbol '%s' is assigned with float '%f'.\n", symbol->identifier, value);
+            printf("[Analyzer] Symbol '%s' may be assigned with float '%f'.\n", symbol->identifier, value);
         }
 
         else if (strcmp(node->right->inferredType, "Bool") == 0) {
             int value = node->right->nodeValue.booleanValue;
             symbol->symbolValue.booleanValue = value;
-            printf("[Analyzer] Symbol '%s' is assigned with boolean '%s'.\n", symbol->identifier, 
+            printf("[Analyzer] Symbol '%s' may be assigned with boolean '%s'.\n", symbol->identifier, 
                    value == 0 ? "false" : "true");
         }
 
         else if (strcmp(node->right->inferredType, "String") == 0) {
             const char* value = node->right->nodeValue.stringLiteral;
             strcpy(symbol->symbolValue.stringLiteral, value);
-            printf("[Analyzer] Symbol '%s' is assigned with string '%s'.\n", symbol->identifier, value);
+            printf("[Analyzer] Symbol '%s' may be assigned with string '%s'.\n", symbol->identifier, value);
         }
     }
 
     // Initialize symbol by assigning a value to it
     symbol->hasInitialized = 1;
     return result;
-}
-
-void foldBinaryExpression(ASTNode* node) {
-    TokenType operator = node->token->tokenType;
-    ASTNode *lhs = node->left;
-    ASTNode *rhs = node->right;
-
-    // Check for the arithmetic binary expression
-    if (operator == TOKEN_ARITHMETIC_ADDITION || operator == TOKEN_ARITHMETIC_SUBTRACTION ||
-        operator == TOKEN_ARITHMETIC_MULTIPLICATION || operator == TOKEN_ARITHMETIC_DIVISION ||
-        operator == TOKEN_ARITHMETIC_MODULO) {
-
-        // Try to infer the result type, where it is Float if either operand is a Float; otherwise Int 
-        int isFloat = (strcmp(lhs->inferredType, "Float") == 0 || strcmp(rhs->inferredType, "Float") == 0);
-
-        // If either operand is a Float, perform floating point operation
-        if (isFloat) {
-            // Get the value from the lhs and rhs
-            float lhsValue = (strcmp(lhs->inferredType, "Float") == 0) ? 
-                             lhs->nodeValue.floatingValue : (float) lhs->nodeValue.integerValue;
-            float rhsValue = (strcmp(rhs->inferredType, "Float") == 0) ? 
-                             rhs->nodeValue.floatingValue : (float) rhs->nodeValue.integerValue;
-            float result = 0.0f;
-
-            // Perform arithmetic operation
-            if (operator == TOKEN_ARITHMETIC_ADDITION) result = lhsValue + rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_SUBTRACTION) result = lhsValue - rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_MULTIPLICATION) result = lhsValue * rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_DIVISION) result = lhsValue / rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_MODULO) result = fmodf(lhsValue, rhsValue);
-
-            node->isFoldable = 1;
-            node->nodeValue.floatingValue = result;
-            strcpy(node->inferredType, "Float");
-        }
-
-        // Otherwise, perform integer operation
-        else {
-            // Get the value from the lhs and rhs
-            int lhsValue = lhs->nodeValue.integerValue;
-            int rhsValue = rhs->nodeValue.integerValue;
-            int result = 0;
-
-            // Perform arithmetic operation
-            if (operator == TOKEN_ARITHMETIC_ADDITION) result = lhsValue + rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_SUBTRACTION) result = lhsValue - rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_MULTIPLICATION) result = lhsValue * rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_DIVISION) result = lhsValue / rhsValue;
-            else if (operator == TOKEN_ARITHMETIC_MODULO) result = lhsValue % rhsValue;
-
-            node->isFoldable = 1;
-            node->nodeValue.integerValue = result;
-            strcpy(node->inferredType, "Int");
-        }
-    }
-
-    // Check for the logical 'and' and 'or' binary expression 
-    else if (operator == TOKEN_LOGICAL_AND_OPERATOR || operator == TOKEN_LOGICAL_OR_OPERATOR) {
-        strcpy(node->inferredType, "Bool");
-
-        if (lhs->isFoldable && rhs->isFoldable) {
-            int lhsValue = lhs->nodeValue.booleanValue;
-            int rhsValue = rhs->nodeValue.booleanValue;
-            int result = (operator == TOKEN_LOGICAL_AND_OPERATOR) ? (lhsValue && rhsValue) : (lhsValue || rhsValue);
-            node->nodeValue.booleanValue = result;
-            node->isFoldable = 1;
-        }
-    }
-
-    // Check for the logical '==' and '!=' binary expression
-    else if (operator == TOKEN_LOGICAL_EQUIVALENCE || operator == TOKEN_NOT_EQUAL_TO_OPERATOR) {
-        strcpy(node->inferredType, "Bool");
-        
-        int result = 0;
-
-        if (strcmp(lhs->inferredType, "Int") == 0) 
-            result = (lhs->nodeValue.integerValue == rhs->nodeValue.integerValue);
-
-        else if (strcmp(lhs->inferredType, "Float") == 0)
-            result = (lhs->nodeValue.floatingValue == rhs->nodeValue.floatingValue);
-
-        else if (strcmp(lhs->inferredType, "Bool") == 0)
-
-            result = (lhs->nodeValue.booleanValue == rhs->nodeValue.booleanValue);
-
-        else if (strcmp(lhs->inferredType, "String") == 0)
-            result = (strcmp(lhs->nodeValue.stringLiteral, rhs->nodeValue.stringLiteral) == 0);
-
-        node->nodeValue.booleanValue = (operator == TOKEN_LOGICAL_EQUIVALENCE) ? result : !result;
-        node->isFoldable = 1;
-    }
-
-    // Check for relational operators '>', '<', '>=' and '<='
-    else if (operator == TOKEN_GREATER_THAN_OPERATOR || operator == TOKEN_LESS_THAN_OPERATOR ||
-             operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR || operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) {
-        strcpy(node->inferredType, "Bool");
-
-        float lhsValue = (strcmp(lhs->inferredType, "Float") == 0) ?
-                         lhs->nodeValue.floatingValue : (float) lhs->nodeValue.integerValue;
-
-        float rhsValue = (strcmp(rhs->inferredType, "Float") == 0) ?
-                         rhs->nodeValue.floatingValue : (float) rhs->nodeValue.integerValue;
-        
-        int result = 0;
-
-        if (operator == TOKEN_GREATER_THAN_OPERATOR) result = lhsValue > rhsValue;
-        else if (operator == TOKEN_LESS_THAN_OPERATOR) result = lhsValue < rhsValue;
-        else if (operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR) result = lhsValue >= rhsValue;
-        else if (operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) result = lhsValue <= rhsValue;
-
-        node->nodeValue.booleanValue = result;
-        node->isFoldable = 1;
-    }
-}
-
-void foldUnaryExpression(ASTNode* node) {
-    TokenType operator = node->token->tokenType;
-    ASTNode* operand = node->left;
-
-    // Unary minus for getting the negation of an numeric value
-    if (operator == TOKEN_ARITHMETIC_SUBTRACTION) {
-        if (strcmp(operand->inferredType, "Float") == 0) {
-            node->isFoldable = 1;
-            node->nodeValue.floatingValue = -(operand->nodeValue.floatingValue);
-            strcpy(node->inferredType, "Float");
-        } 
-
-        else if (strcmp(operand->inferredType, "Int") == 0) {
-            node->isFoldable = 1;
-            node->nodeValue.integerValue = -(operand->nodeValue.integerValue);
-            strcpy(node->inferredType, "Int");
-        }
-    }
-
-    // Unary negation for getting the inverse of a boolean value
-    else if (operator == TOKEN_LOGICAL_NEGATION) {
-        if (operand->isFoldable) {
-            node->isFoldable = 1;
-            node->nodeValue.booleanValue = !(operand->nodeValue.booleanValue);
-        }
-        strcpy(node->inferredType, "Bool");
-    }
-
-    // Unary factorial operation
-    else if (operator == TOKEN_ARITHMETIC_FACTORIAL) {
-        int number = operand->nodeValue.integerValue;
-        int result = 1;
-
-        // Perform factorial operation
-        for (int term = 1; term <= number; term++) result *= term;
-        
-        node->isFoldable = 1;
-        node->nodeValue.integerValue = result;
-        strcpy(node->inferredType, "Int");
-    }
 }
 
 int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
@@ -487,6 +337,217 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
     }
 }
 
+int analyzeCodeBlock(Analyzer *analyzer, ASTNode *node) {
+    int result = 1;
+
+    // Process each statement within the code block
+    ASTNode *statement = node->left;
+    while (statement != NULL) {
+        result = analyzeStatement(analyzer, statement) && result;
+        statement = statement->right;
+    }
+
+    // Recursively handle code blocks
+    if (node->right) result = analyzeCodeBlock(analyzer, node->right) && result;
+    return result;
+}
+
+int analyzeConditionalStatement(Analyzer *analyzer, ASTNode *node) {
+    ASTNode *condition = node->left;
+    ASTNode *conditionalBody = node->right;
+
+    int result = analyzeExpression(analyzer, condition);
+    
+    // Condition must be a boolean value 
+    if (!result || strcmp(condition->inferredType, "Bool")) {
+        analyzer->analyzerError = ANALYZER_ERROR_INVALID_CONDITION;
+        reportAnalyzerError(analyzer, node);
+        return 0;
+    }
+
+    // If the condition is foldable, we can statically determine which condition body to execute
+    int safeEliminateFirstCodeBlock = 0;
+    int safeEliminateSecondCodeBlock = 0;
+
+    if (condition->isFoldable) {
+        if (condition->nodeValue.booleanValue) safeEliminateSecondCodeBlock = 1;
+        else safeEliminateFirstCodeBlock = 1;
+    }
+
+    if (conditionalBody->nodeType == AST_CONDITIONAL_BODY) {
+        // Analyze if-body
+        if (conditionalBody->left && !safeEliminateFirstCodeBlock) { 
+            enterNamespace(analyzer->symbolTable);
+            result = analyzeCodeBlock(analyzer, conditionalBody->left) && result;
+            exitNamespace(analyzer->symbolTable);
+        }
+
+        // Try to analyze else statement body if exists
+        if (conditionalBody->right && !safeEliminateSecondCodeBlock) {
+            enterNamespace(analyzer->symbolTable);
+            result = analyzeCodeBlock(analyzer, conditionalBody->right) && result;
+            exitNamespace(analyzer->symbolTable);
+        }
+    }
+
+    return result;
+}
+
+void foldBinaryExpression(ASTNode* node) {
+    TokenType operator = node->token->tokenType;
+    ASTNode *lhs = node->left;
+    ASTNode *rhs = node->right;
+
+    // Check for the arithmetic binary expression
+    if (operator == TOKEN_ARITHMETIC_ADDITION || operator == TOKEN_ARITHMETIC_SUBTRACTION ||
+        operator == TOKEN_ARITHMETIC_MULTIPLICATION || operator == TOKEN_ARITHMETIC_DIVISION ||
+        operator == TOKEN_ARITHMETIC_MODULO) {
+
+        // Try to infer the result type, where it is Float if either operand is a Float; otherwise Int 
+        int isFloat = (strcmp(lhs->inferredType, "Float") == 0 || strcmp(rhs->inferredType, "Float") == 0);
+
+        // If either operand is a Float, perform floating point operation
+        if (isFloat) {
+            // Get the value from the lhs and rhs
+            float lhsValue = (strcmp(lhs->inferredType, "Float") == 0) ? 
+                             lhs->nodeValue.floatingValue : (float) lhs->nodeValue.integerValue;
+            float rhsValue = (strcmp(rhs->inferredType, "Float") == 0) ? 
+                             rhs->nodeValue.floatingValue : (float) rhs->nodeValue.integerValue;
+            float result = 0.0f;
+
+            // Perform arithmetic operation
+            if (operator == TOKEN_ARITHMETIC_ADDITION) result = lhsValue + rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_SUBTRACTION) result = lhsValue - rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MULTIPLICATION) result = lhsValue * rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_DIVISION) result = lhsValue / rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MODULO) result = fmodf(lhsValue, rhsValue);
+
+            node->isFoldable = 1;
+            node->nodeValue.floatingValue = result;
+            strcpy(node->inferredType, "Float");
+        }
+
+        // Otherwise, perform integer operation
+        else {
+            // Get the value from the lhs and rhs
+            int lhsValue = lhs->nodeValue.integerValue;
+            int rhsValue = rhs->nodeValue.integerValue;
+            int result = 0;
+
+            // Perform arithmetic operation
+            if (operator == TOKEN_ARITHMETIC_ADDITION) result = lhsValue + rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_SUBTRACTION) result = lhsValue - rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MULTIPLICATION) result = lhsValue * rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_DIVISION) result = lhsValue / rhsValue;
+            else if (operator == TOKEN_ARITHMETIC_MODULO) result = lhsValue % rhsValue;
+
+            node->isFoldable = 1;
+            node->nodeValue.integerValue = result;
+            strcpy(node->inferredType, "Int");
+        }
+    }
+
+    // Check for the logical 'and' and 'or' binary expression 
+    else if (operator == TOKEN_LOGICAL_AND_OPERATOR || operator == TOKEN_LOGICAL_OR_OPERATOR) {
+        strcpy(node->inferredType, "Bool");
+
+        if (lhs->isFoldable && rhs->isFoldable) {
+            int lhsValue = lhs->nodeValue.booleanValue;
+            int rhsValue = rhs->nodeValue.booleanValue;
+            int result = (operator == TOKEN_LOGICAL_AND_OPERATOR) ? (lhsValue && rhsValue) : (lhsValue || rhsValue);
+            node->nodeValue.booleanValue = result;
+            node->isFoldable = 1;
+        }
+    }
+
+    // Check for the logical '==' and '!=' binary expression
+    else if (operator == TOKEN_LOGICAL_EQUIVALENCE || operator == TOKEN_NOT_EQUAL_TO_OPERATOR) {
+        strcpy(node->inferredType, "Bool");
+        
+        int result = 0;
+
+        if (strcmp(lhs->inferredType, "Int") == 0) 
+            result = (lhs->nodeValue.integerValue == rhs->nodeValue.integerValue);
+
+        else if (strcmp(lhs->inferredType, "Float") == 0)
+            result = (lhs->nodeValue.floatingValue == rhs->nodeValue.floatingValue);
+
+        else if (strcmp(lhs->inferredType, "Bool") == 0)
+
+            result = (lhs->nodeValue.booleanValue == rhs->nodeValue.booleanValue);
+
+        else if (strcmp(lhs->inferredType, "String") == 0)
+            result = (strcmp(lhs->nodeValue.stringLiteral, rhs->nodeValue.stringLiteral) == 0);
+
+        node->nodeValue.booleanValue = (operator == TOKEN_LOGICAL_EQUIVALENCE) ? result : !result;
+        node->isFoldable = 1;
+    }
+
+    // Check for relational operators '>', '<', '>=' and '<='
+    else if (operator == TOKEN_GREATER_THAN_OPERATOR || operator == TOKEN_LESS_THAN_OPERATOR ||
+             operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR || operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) {
+        strcpy(node->inferredType, "Bool");
+
+        float lhsValue = (strcmp(lhs->inferredType, "Float") == 0) ?
+                         lhs->nodeValue.floatingValue : (float) lhs->nodeValue.integerValue;
+
+        float rhsValue = (strcmp(rhs->inferredType, "Float") == 0) ?
+                         rhs->nodeValue.floatingValue : (float) rhs->nodeValue.integerValue;
+        
+        int result = 0;
+
+        if (operator == TOKEN_GREATER_THAN_OPERATOR) result = lhsValue > rhsValue;
+        else if (operator == TOKEN_LESS_THAN_OPERATOR) result = lhsValue < rhsValue;
+        else if (operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR) result = lhsValue >= rhsValue;
+        else if (operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) result = lhsValue <= rhsValue;
+
+        node->nodeValue.booleanValue = result;
+        node->isFoldable = 1;
+    }
+}
+
+void foldUnaryExpression(ASTNode* node) {
+    TokenType operator = node->token->tokenType;
+    ASTNode* operand = node->left;
+
+    // Unary minus for getting the negation of an numeric value
+    if (operator == TOKEN_ARITHMETIC_SUBTRACTION) {
+        if (strcmp(operand->inferredType, "Float") == 0) {
+            node->isFoldable = 1;
+            node->nodeValue.floatingValue = -(operand->nodeValue.floatingValue);
+            strcpy(node->inferredType, "Float");
+        } 
+
+        else if (strcmp(operand->inferredType, "Int") == 0) {
+            node->isFoldable = 1;
+            node->nodeValue.integerValue = -(operand->nodeValue.integerValue);
+            strcpy(node->inferredType, "Int");
+        }
+    }
+
+    // Unary negation for getting the inverse of a boolean value
+    else if (operator == TOKEN_LOGICAL_NEGATION) {
+        if (operand->isFoldable) {
+            node->isFoldable = 1;
+            node->nodeValue.booleanValue = !(operand->nodeValue.booleanValue);
+        }
+        strcpy(node->inferredType, "Bool");
+    }
+
+    // Unary factorial operation
+    else if (operator == TOKEN_ARITHMETIC_FACTORIAL) {
+        int number = operand->nodeValue.integerValue;
+        int result = 1;
+
+        // Perform factorial operation
+        for (int term = 1; term <= number; term++) result *= term;
+        
+        node->isFoldable = 1;
+        node->nodeValue.integerValue = result;
+        strcpy(node->inferredType, "Int");
+    }
+}
+
 void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
     switch (analyzer->analyzerError) {
         case ANALYZER_ERROR_REDECLARED_VARIABLE: {
@@ -518,6 +579,14 @@ void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
             int line = node->token->location.line;
             int column = node->token->location.column;
             printf("[ERROR] Unable to perform '%s' due to type missmatch at location %d:%d.\n", operator, line, column);
+            break;
+        }
+
+        case ANALYZER_ERROR_INVALID_CONDITION: {
+            const char *statement = node->token->lexeme;
+            int line = node->token->location.line;
+            int column = node->token->location.column;
+            printf("[ERROR] Invalid condition for '%s' statement at location %d:%d.\n", statement, line, column);
             break;
         }
         default: printf("Unknown error!\n"); break;
@@ -582,9 +651,14 @@ void enterNamespace(SymbolTable *symbolTable) {
 }
 
 void exitNamespace(SymbolTable *symbolTable) {
-    // Remove all symbols that belong to the current namespace.
-    removeSymbolsFromCurrentNamespace(symbolTable);
+    // Print header for removed symbols
+    printf("\n------------------------ Removing Symbols from Namespace %d ------------------------\n", symbolTable->currentNamespace);
+    printf("%-20s %-20s %-10s %-12s %-8s %s\n", "Identifier", "Type", "Namespace", "Initialized", "Mutable", "Location");
 
+    // Remove all symbols that belong to the current namespace
+    removeSymbolsFromCurrentNamespace(symbolTable);
+    printf("-----------------------------------------------------------------------------------\n");
+    
     // Decrement the namespace counter only if current namespace is not global (0)
     if (symbolTable->currentNamespace > 0) symbolTable->currentNamespace--;
 }
@@ -594,7 +668,7 @@ Symbol *lookupSymbolFromCurrentNamespace(SymbolTable *symbolTable, const char *i
 
     while (currentSymbol) {
         if (strcmp(currentSymbol->identifier, identifier) == 0 && 
-            currentSymbol->namespace == symbolTable->currentNamespace) {
+            currentSymbol->namespace <= symbolTable->currentNamespace) {
             return currentSymbol;
         }
         currentSymbol = currentSymbol->nextSymbol;
@@ -611,6 +685,17 @@ void removeSymbolsFromCurrentNamespace(SymbolTable *symbolTable) {
         // If found a symbol in the current namespace, we remove it
         if ((*currentSymbol)->namespace == symbolTable->currentNamespace) {
             Symbol *toRemove = *currentSymbol;
+
+            // Display the symbol being removed.
+            printf("%-20s %-20s %-10d %-12s %-8s %d:%d\n",
+                   toRemove->identifier,
+                   toRemove->type,
+                   toRemove->namespace,
+                   toRemove->hasInitialized ? "Yes" : "No",
+                   toRemove->isMutable ? "Yes" : "No",
+                   toRemove->declarationLocation.line,
+                   toRemove->declarationLocation.column);
+
             *currentSymbol = (*currentSymbol)->nextSymbol;
             free(toRemove);
         }
