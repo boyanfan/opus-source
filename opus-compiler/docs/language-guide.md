@@ -66,7 +66,7 @@ is `false`.
 `````opus
 let temperature: Float = -12.5
 
-if (temperature < 0) { 
+if temperature < 0 { 
 	print("It is so cold outside! I gonna skip this morning lecture!") 
 } else { 
 	print("It is not that cold outside, it's time to go!") 
@@ -95,7 +95,7 @@ var dividend: Int = 13   // We want to find 13 % 3, the remainder of 13 / 3
 
 repeat {
 	dividend = dividend - 3
-} until (dividend < 0)   // After looping, the remainder = dividend + 3
+} until dividend < 0     // After looping, the remainder = dividend + 3
 `````
 
 ## Functions
