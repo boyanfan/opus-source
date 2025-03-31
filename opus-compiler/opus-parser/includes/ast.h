@@ -23,7 +23,6 @@ typedef enum {
     AST_ASSIGNMENT_STATEMENT,      /// Assignment statement node (e.g. "number = 5").
     AST_BINARY_EXPRESSION,         /// Binary expressions (e.g. "1 + 1")
     AST_UNARY_EXPRESSION,          /// Unary expressions (e.g. "!condition")
-    AST_POSTFIX_EXPRESSION,        /// Postfix expressions (e.g. "5!")
     AST_FUNCTION_CALL,             /// Function call (e.g. "abs(-3.14)")
     AST_ARGUMENT,                  /// Argument label and its value.
     AST_ARGUMENT_LABEL,            /// The label of the argument.

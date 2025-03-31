@@ -96,7 +96,7 @@ int analyzeAssignmentStatement(Analyzer *analyzer, ASTNode *node) {
 
     // Perform type checkinig for the assignment statement (type-check lhs and rhs)
     if (strcmp(symbol->type, node->right->inferredType)) {
-        analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+        analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
         reportAnalyzerError(analyzer, node);
         return 0;
     }
@@ -247,6 +247,48 @@ void foldBinaryExpression(ASTNode* node) {
     }
 }
 
+void foldUnaryExpression(ASTNode* node) {
+    TokenType operator = node->token->tokenType;
+    ASTNode* operand = node->left;
+
+    // Unary minus for getting the negation of an numeric value
+    if (operator == TOKEN_ARITHMETIC_SUBTRACTION) {
+        if (strcmp(operand->inferredType, "Float") == 0) {
+            node->isFoldable = 1;
+            node->nodeValue.floatingValue = -(operand->nodeValue.floatingValue);
+            strcpy(node->inferredType, "Float");
+        } 
+
+        else if (strcmp(operand->inferredType, "Int") == 0) {
+            node->isFoldable = 1;
+            node->nodeValue.integerValue = -(operand->nodeValue.integerValue);
+            strcpy(node->inferredType, "Int");
+        }
+    }
+
+    // Unary negation for getting the inverse of a boolean value
+    else if (operator == TOKEN_LOGICAL_NEGATION) {
+        if (operand->isFoldable) {
+            node->isFoldable = 1;
+            node->nodeValue.booleanValue = !(operand->nodeValue.booleanValue);
+        }
+        strcpy(node->inferredType, "Bool");
+    }
+
+    // Unary factorial operation
+    else if (operator == TOKEN_ARITHMETIC_FACTORIAL) {
+        int number = operand->nodeValue.integerValue;
+        int result = 1;
+
+        // Perform factorial operation
+        for (int term = 1; term <= number; term++) result *= term;
+        
+        node->isFoldable = 1;
+        node->nodeValue.integerValue = result;
+        strcpy(node->inferredType, "Int");
+    }
+}
+
 int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
     // Return successful indication (True) if there is no node to analyze
     if (!node) return 1;
@@ -349,7 +391,7 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
 
                 // Handle missmatched type 
                 if (!isNumeric(lhs->inferredType) || !isNumeric(rhs->inferredType)) {
-                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
                     reportAnalyzerError(analyzer, node);
                     return 0;
                 }
@@ -366,7 +408,7 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
             // For logical operators 'and' and 'or', both operands must be boolean
             else if (operator == TOKEN_LOGICAL_AND_OPERATOR || operator == TOKEN_LOGICAL_OR_OPERATOR) {
                 if (strcmp(lhs->inferredType, "Bool") != 0 || strcmp(rhs->inferredType, "Bool") != 0) {
-                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
                     reportAnalyzerError(analyzer, node);
                     return 0;
                 }
@@ -375,7 +417,7 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
             // For logical operators '==' and '!=', both operands must be the same type 
             else if (operator == TOKEN_LOGICAL_EQUIVALENCE || operator == TOKEN_NOT_EQUAL_TO_OPERATOR) {
                 if (strcmp(lhs->inferredType, rhs->inferredType) != 0) {
-                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
                     reportAnalyzerError(analyzer, node);
                     return 0;
                 }
@@ -385,7 +427,7 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
             else if (operator == TOKEN_GREATER_THAN_OPERATOR || operator == TOKEN_LESS_THAN_OPERATOR ||
                      operator == TOKEN_GREATER_OR_EQUAL_TO_OPERATOR || operator == TOKEN_LESS_OR_EQUAL_TO_OPERATOR) {
                 if (!(isNumeric(lhs->inferredType) && isNumeric(rhs->inferredType))) {
-                    analyzer->analyzerError = ANALYZER_ERROR_TYPE_MISSMATCH;
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
                     reportAnalyzerError(analyzer, node);
                     return 0;
                 }
@@ -395,6 +437,48 @@ int analyzeExpression(Analyzer *analyzer, ASTNode *node) {
             if (node->left->isFoldable && node->right->isFoldable) foldBinaryExpression(node);
 
             // TODO:  Support relational and logical operators
+            return 1;
+        }
+
+        // Determine if it is a unary expression
+        case AST_UNARY_EXPRESSION: {
+            // Recursively analyze left operands
+            if (!analyzeExpression(analyzer, node->left)) return 0;
+
+            TokenType operator = node->token->tokenType;
+            ASTNode* operand = node->left;
+
+            // Unary minus only applies on numeric value
+            if (operator == TOKEN_ARITHMETIC_SUBTRACTION) {
+                if (!isNumeric(operand->inferredType)) {
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+                strcpy(node->inferredType, operand->inferredType);
+            }
+
+            // Unary negation only applies on boolean value 
+            else if (operator == TOKEN_LOGICAL_NEGATION) {
+                if (strcmp(operand->inferredType, "Bool") != 0) {
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+                strcpy(node->inferredType, "Bool");
+            }
+
+            // Unary factorial only applies on positive integers
+            else if (operator == TOKEN_ARITHMETIC_FACTORIAL) {
+                if (strcmp(operand->inferredType, "Int") != 0) {
+                    analyzer->analyzerError = ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH;
+                    reportAnalyzerError(analyzer, node);
+                    return 0;
+                }
+                strcpy(node->inferredType, "Int");
+            }
+
+            if (operand->isFoldable) foldUnaryExpression(node);
             return 1;
         }
 
@@ -429,7 +513,7 @@ void reportAnalyzerError(Analyzer *analyzer, ASTNode *node) {
             break;
         }
 
-        case ANALYZER_ERROR_TYPE_MISSMATCH: {
+        case ANALYZER_ERROR_OPERATION_TYPE_MISSMATCH: {
             const char *operator = node->token->lexeme;
             int line = node->token->location.line;
             int column = node->token->location.column;

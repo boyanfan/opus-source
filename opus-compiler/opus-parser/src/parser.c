@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "parser.h"
+#include "ast.h"
 
 ASTNode *parseProgram(Parser *parser, FILE *sourceCode) {
     ASTNode *root = initASTNode(AST_PROGRAM, NULL);
@@ -713,7 +714,7 @@ ASTNode *parsePostfix(Parser *parser, FILE *sourceCode) {
 
         // Try to match factorial
         else if (matchTokenType(parser, TOKEN_ARITHMETIC_FACTORIAL)) {
-            ASTNode *postfixNode = initASTNode(AST_POSTFIX_EXPRESSION, parser->currentToken);
+            ASTNode *postfixNode = initASTNode(AST_UNARY_EXPRESSION, parser->currentToken);
             postfixNode->left = root;
             root = postfixNode;
 
@@ -945,7 +946,6 @@ void displayAST(ASTNode* node, int level) {
         case AST_BOOLEAN_LITERAL:           printf("AST_BOOLEAN_LITERAL (%s)\n", node->token->lexeme); break;
         case AST_BINARY_EXPRESSION:         printf("AST_BINARY_EXPRESSION (%s)\n", node->token->lexeme); break;
         case AST_UNARY_EXPRESSION:          printf("AST_UNARY_EXPRESSION (%s)\n", node->token->lexeme); break;
-        case AST_POSTFIX_EXPRESSION:        printf("AST_POSTFIX_EXPRESSION (%s)\n", node->token->lexeme); break;
         case AST_FUNCTION_CALL:             printf("AST_FUNCTION_CALL\n"); break;
         case AST_ARGUMENT:                  printf("AST_ARGUMENT\n"); break;
         case AST_ARGUMENT_LABEL:            printf("AST_ARGUMENT_LABEL (%s)\n", node->token->lexeme); break;
