@@ -447,7 +447,7 @@ int locateStartOfNextToken(Lexer *lexer, FILE *sourceCode) {
     // If the character has reached a comment line (starts with `//`), consume the entire line
     if (character == '/' && peekNextCharacter(sourceCode) == '/') {
         locateStartOfNextLine(lexer, sourceCode);
-        return locateStartOfNextToken(lexer, sourceCode);
+        return '\n'; 
     }
 
     return character;

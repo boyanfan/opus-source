@@ -1,0 +1,15 @@
+let x: Int = 5
+
+// If the pre-condition is static (like here, we already know '5' is foldable and
+// x now equals to 5), Opus Compiler removes unreachable code block
+
+if -x == -5 {
+    let shouldBeDisplayed: String = "Boyan Fan"
+}
+
+// The code block below is removed by the Opus Compiler as "-x == -5" is always true
+// Now replace the pre-condition with "!(-x == -5)", you should see the code below displays 
+
+else {
+    let shouldNotBeDisplayed: String = "DONT DISPLAY!!!"
+}

@@ -1,5 +1,0 @@
-var x: Bool = false
-
-if (!x) {
-    let a: String = "Boyan"
-} 

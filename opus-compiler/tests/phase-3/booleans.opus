@@ -1,0 +1,11 @@
+let x: Int = 5
+let y: Int = 4
+
+let condition: Bool = x < y     // Expected to be false
+let result: Bool = -y! == -24   // Expected to be true since -(4!) equals to -24
+
+// Now 'condition' is false, and 'result' is true
+var z: Bool = !condition && result   // Expected to be true since !false and true equals true
+
+// Now toogle 'z' so it changes from true to false
+z = !z

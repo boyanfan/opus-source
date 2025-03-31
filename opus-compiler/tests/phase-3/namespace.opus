@@ -1,0 +1,20 @@
+// This is a global variable so that it should be accessible in all nested namespaces below
+var global: Int
+
+if (true) {
+    global = 42
+    
+    // A local variable is initialized, and it should not be visible to outer namespaces 
+    var kindOfLocal: String
+
+    if (1 == 1) {
+        // Another local variable is initialized, and it should not be visible to outer namespaces
+        let veryLocal: Bool = true
+    }
+
+    // Now exit namespace above, variable 'local' should be removed, therefore,
+    // Expected an ERROR! Since variable 'local' has been removed 
+    veryLocal = false
+
+    // Comment out the statement above to fix this error
+}

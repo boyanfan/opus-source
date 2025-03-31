@@ -1,0 +1,9 @@
+var x: Int = 3 + 2 * 1     // Expected to be 5
+let y: Float = -x! + 1.0   // Expected to be -119.0
+
+x = x + x   // Expected to be 10
+
+// The statement below is Eexpected to be ERROR! 
+// Since y is immutable (due to keyword 'let')
+// To see the symbol table, comment out the statement below using '//'
+y = y + 1   

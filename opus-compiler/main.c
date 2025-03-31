@@ -17,6 +17,8 @@ int main(int argc, char *argv[]) {
 
     // Safely open given Opus source code by using function openOpusSourceCode()
     FILE *sourceCode = openOpusSourceCode(argv[1]);
+    if (!sourceCode) return EXIT_FAILURE;
+    
     printf("Compiling...\n");
 
     // Initialize the Parser and try to generate the AST for the provided sourceCode
